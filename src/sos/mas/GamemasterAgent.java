@@ -34,27 +34,34 @@ public class GamemasterAgent extends Agent {
         }
 
         protected ACLMessage handleSubscription(ACLMessage subscription) {
-            out("got subscription request by " + subscription.getSender().getName());
             // handle a subscription request
+            // if subscription is ok, create it        	
+            try {
+                createSubscription(subscription);
+            } catch (Exception e) {
+                ACLMessage refuse = new ACLMessage(ACLMessage.REFUSE);
+                refuse.addReceiver(subscription.getSender());
+                refuse.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
 
-            // if subscription is ok, create it
-            createSubscription(subscription);
-
-            ACLMessage agree = subscription.createReply();
-            agree.setPerformative(ACLMessage.AGREE);
-
+                return refuse;
+            }
             // if successful, should answer (return) with AGREE; otherwise with REFUSE or NOT_UNDERSTOOD
-            return agree; // todo: change
+            ACLMessage agree = new ACLMessage(ACLMessage.AGREE);
+            agree.addReceiver(subscription.getSender());
+            agree.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
+
+            return agree;
         }
+
 
         protected void notify(ACLMessage inform) {
             // this is the method you invoke ("call-back") for creating a new inform message;
             // it is not part of the SubscriptionResponder API, so rename it as you like         
             // go through every subscription
             Vector subs = getSubscriptions();
+
             for (int i = 0; i < subs.size(); i++)
-                ((SubscriptionResponder.Subscription)
-                        subs.elementAt(i)).notify(inform);
+                ((SubscriptionResponder.Subscription) subs.elementAt(i)).notify(inform);
         }
     }
 
