@@ -25,13 +25,10 @@ public class GamemasterAgent extends Agent {
 
     class GMSubscriptionResponder extends SubscriptionResponder {
         GMSubscriptionResponder(Agent a) {
-            super(a, MessageTemplate.and(
-                                       
-MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.SUBSCRIBE),
-                                                                       
-MessageTemplate.MatchPerformative(ACLMessage.CANCEL)),
-                                       
-MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE)));
+            super(a, MessageTemplate.and(                                       
+					MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.SUBSCRIBE),                                                                       
+					MessageTemplate.MatchPerformative(ACLMessage.CANCEL)),                                       
+					MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE)));
         }
        
         protected ACLMessage handleSubscription(ACLMessage subscription_msg) 
@@ -56,8 +53,7 @@ MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE)));
        
         protected void notify(ACLMessage inform) 
         {
-            // this is the method you invoke ("call-back") for creating a new inform message;
-            // it is not part of the SubscriptionResponder API, so rename it as you like         
+            // this is the method you invoke ("call-back") for creating a new inform message;       
             // go through every subscription
             Vector subs = getSubscriptions();
             
