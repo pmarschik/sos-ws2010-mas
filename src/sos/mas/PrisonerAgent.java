@@ -27,32 +27,7 @@ public class PrisonerAgent extends Agent {
         try {
             out("Starting");
 
-            DFAgentDescription gamemasterServiceTemplate = new DFAgentDescription();
-            ServiceDescription gamemasterServiceTemplateSD = new ServiceDescription();
-            gamemasterServiceTemplateSD.setType("prisoners-dilemma-gamemaster"); // TODO refactor into constant
-            gamemasterServiceTemplate.addServices(gamemasterServiceTemplateSD);
-
-            SearchConstraints sc = new SearchConstraints();
-            sc.setMaxResults(1L);
-
-            DFAgentDescription[] results =
-                    DFService.searchUntilFound(this, getDefaultDF(), gamemasterServiceTemplate, sc,
-                            10000L);
-
-            DFAgentDescription dfd = results[0];
-            AID gamemasterAID = dfd.getName();
-
-            // do we need this?
-            Iterator it = dfd.getAllServices();
-            while (it.hasNext()) {
-                ServiceDescription sd = (ServiceDescription) it.next();
-                if (sd.getType().equals("prisoners-dilemma-gamemaster"))
-                    out("found the following service: %s by %s", sd.getName(), gamemasterAID.getName());
-            }
-
-            MessageTemplate queryMessageTemplate = MessageTemplate.and(MessageTemplate.and(
-                    MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_QUERY),
-                    MessageTemplate.MatchPerformative(ACLMessage.QUERY_IF)), MessageTemplate.MatchContent("(guilty)"));
+            AID gamemasterAID = getGamemasterService();
 
             ACLMessage subscribeMsg = new ACLMessage(ACLMessage.SUBSCRIBE);
             subscribeMsg.addReceiver(gamemasterAID);
@@ -68,6 +43,7 @@ public class PrisonerAgent extends Agent {
                 protected void handleInform(ACLMessage inform) {
                     String content = inform.getContent();
 
+                    // TODO replace with FIPA SL
                     String contents[] = content.split(" ");
                     Integer id = Integer.parseInt(contents[0]);
                     boolean answerMe = Boolean.parseBoolean(contents[1]);
@@ -76,6 +52,10 @@ public class PrisonerAgent extends Agent {
                     history.addAnswer(id, new GameHistory.AnswersPrisoners(null, answerMe, null, answerOther));
                 }
             });
+
+            MessageTemplate queryMessageTemplate = MessageTemplate.and(MessageTemplate.and(
+                    MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_QUERY),
+                    MessageTemplate.MatchPerformative(ACLMessage.QUERY_IF)), MessageTemplate.MatchContent("(guilty)"));
 
             addBehaviour(new AchieveREResponder(this, queryMessageTemplate) {
                 @Override
@@ -94,6 +74,8 @@ public class PrisonerAgent extends Agent {
 
                     ACLMessage inform = request.createReply();
                     inform.setPerformative(ACLMessage.INFORM);
+
+                    // TODO replace with FIPA SL
                     inform.setContent(comply ? "(true)" : "(false)");
 
                     return inform;
@@ -105,6 +87,32 @@ public class PrisonerAgent extends Agent {
 
             takeDown();
         }
+    }
+
+    private AID getGamemasterService() throws FIPAException {
+        DFAgentDescription gamemasterServiceTemplate = new DFAgentDescription();
+        ServiceDescription gamemasterServiceTemplateSD = new ServiceDescription();
+        gamemasterServiceTemplateSD.setType("prisoners-dilemma-gamemaster"); // TODO refactor into constant
+        gamemasterServiceTemplate.addServices(gamemasterServiceTemplateSD);
+
+        SearchConstraints sc = new SearchConstraints();
+        sc.setMaxResults(1L);
+
+        DFAgentDescription[] results =
+                DFService.searchUntilFound(this, getDefaultDF(), gamemasterServiceTemplate, sc,
+                        10000L);
+
+        DFAgentDescription dfd = results[0];
+        AID gamemasterAID = dfd.getName();
+
+        // do we need this?
+        Iterator it = dfd.getAllServices();
+        while (it.hasNext()) {
+            ServiceDescription sd = (ServiceDescription) it.next();
+            if (sd.getType().equals("prisoners-dilemma-gamemaster"))
+                out("found the following service: %s by %s", sd.getName(), gamemasterAID.getName());
+        }
+        return gamemasterAID;
     }
 
     @Override

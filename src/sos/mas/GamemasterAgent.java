@@ -23,7 +23,7 @@ public class GamemasterAgent extends Agent {
         System.out.println(String.format(text, args));
     }
 
-    private class GMSubscriptionManager implements SubscriptionResponder.SubscriptionManager {
+    private class SubscriptionManager implements SubscriptionResponder.SubscriptionManager {
 
         @Override
         public boolean deregister(Subscription arg0) throws FailureException {
@@ -40,40 +40,21 @@ public class GamemasterAgent extends Agent {
 
     }
 
-    private GMSubscriptionManager subscriptionManager = null;
-    private SubscriptionResponder subscriptionResponder = null;
+    private SubscriptionManager subscriptionManager;
+    private SubscriptionResponder subscriptionResponder;
+    private AID prisoner1;
+    private AID prisoner2;
+    private int iterations;
 
     @Override
     protected void setup() {
         try {
             out("Starting");
 
-            Object[] args = getArguments();
+            handleArguments();
+            registerService();
 
-            if (args == null || args.length < 3 || args.length > 3) {
-                out("Need to supply the names of the two prisoner agents and the number of iterations.");
-
-                takeDown();
-            }
-
-            String prisoner1 = (String) args[0];
-            String prisoner2 = (String) args[1];
-            int iterations = Integer.parseInt((String) args[2]);
-
-            DFAgentDescription dfd = new DFAgentDescription();
-            dfd.setName(getAID());
-            ServiceDescription sd = new ServiceDescription();
-            sd.setName(getLocalName());
-            sd.setType("prisoners-dilemma-gamemaster");
-            // Agents that want to use this service need to "know" the prisoners-dilemma-ontology
-            sd.addOntologies("prisoners-dilemma-ontology");
-            // Agents that want to use this service need to "speak" the FIPA-SL language
-            sd.addLanguages(FIPANames.ContentLanguage.FIPA_SL);
-            dfd.addServices(sd);
-
-            DFService.register(this, dfd);
-
-            subscriptionManager = new GMSubscriptionManager();
+            subscriptionManager = new SubscriptionManager();
 
             MessageTemplate subscribeMsg =
                     MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
@@ -97,43 +78,78 @@ public class GamemasterAgent extends Agent {
                 }
             });
 
-            ACLMessage msg = new ACLMessage(ACLMessage.QUERY_IF);
-            msg.addReceiver(new AID(prisoner1, AID.ISLOCALNAME));
-            msg.addReceiver(new AID(prisoner2, AID.ISLOCALNAME));
-            msg.setProtocol(FIPANames.InteractionProtocol.FIPA_QUERY);
-
-            msg.setReplyByDate(new Date(System.currentTimeMillis() + 10000));
-            msg.setContent("guilty"); // TODO replace by ontology?
-
-            for (int i = 0; i < iterations; i++) {
-                addBehaviour(new AchieveREInitiator(this, msg) {
-                    protected void handleFailure(ACLMessage failure) {
-                        if (failure.getSender().equals(myAgent.getAMS()))
-                            // FAILURE notification from the JADE runtime: the receiver does not exist
-                            out("Responder does not exist");
-                        else
-                            out("Agent %s failed to perform the requested action", failure.getSender().getName());
-                    }
-
-                    protected void handleAllResultNotifications(Vector notifications) {
-                        for (Object notification : notifications) {
-                            ACLMessage inform = (ACLMessage) notification;
-
-                            // TODO more comprehensive parsing (i.e. handle errors)
-                            boolean complied = inform.getContent().equals("(true)");
-
-                            // TODO store result
-
-                            out("Agent %s %s", inform.getSender().getName(), (complied ? "complied" : "defected"));
-                        }
-                    }
-                });
-            }
+            startQueryProtocol();
         } catch (FIPAException fe) {
             fe.printStackTrace();
 
             takeDown();
         }
+    }
+
+    private void startQueryProtocol() {
+        ACLMessage msg = new ACLMessage(ACLMessage.QUERY_IF);
+        msg.addReceiver(prisoner1);
+        msg.addReceiver(prisoner2);
+        msg.setProtocol(FIPANames.InteractionProtocol.FIPA_QUERY);
+
+        msg.setReplyByDate(new Date(System.currentTimeMillis() + 10000));
+        // TODO replace by FIPA SL
+        msg.setContent("guilty");
+
+        for (int i = 0; i < iterations; i++) {
+            addBehaviour(new AchieveREInitiator(this, msg) {
+                protected void handleFailure(ACLMessage failure) {
+                    if (failure.getSender().equals(myAgent.getAMS()))
+                        // FAILURE notification from the JADE runtime: the receiver does not exist
+                        out("Responder does not exist");
+                    else
+                        out("Agent %s failed to perform the requested action", failure.getSender().getName());
+                }
+
+                protected void handleAllResultNotifications(Vector notifications) {
+                    for (Object notification : notifications) {
+                        ACLMessage inform = (ACLMessage) notification;
+
+                        // TODO more comprehensive parsing (i.e. handle errors)
+                        // TODO replace with FIPA SL parsing
+                        boolean complied = inform.getContent().equals("(true)");
+
+                        // TODO store result
+
+                        out("Agent %s %s", inform.getSender().getName(), (complied ? "complied" : "defected"));
+                    }
+                }
+            });
+        }
+    }
+
+    private void handleArguments() {
+        Object[] args = getArguments();
+
+        if (args == null || args.length < 3 || args.length > 3) {
+            out("Need to supply the names of the two prisoner agents and the number of iterations.");
+
+            takeDown();
+        }
+
+        prisoner1 = new AID((String) args[0], AID.ISLOCALNAME);
+        prisoner2 = new AID((String) args[1], AID.ISLOCALNAME);
+        iterations = Integer.parseInt((String) args[2]);
+    }
+
+    private void registerService() throws FIPAException {
+        DFAgentDescription dfd = new DFAgentDescription();
+        dfd.setName(getAID());
+        ServiceDescription sd = new ServiceDescription();
+        sd.setName(getLocalName());
+        sd.setType("prisoners-dilemma-gamemaster");
+        // Agents that want to use this service need to "know" the prisoners-dilemma-ontology
+        sd.addOntologies("prisoners-dilemma-ontology");
+        // Agents that want to use this service need to "speak" the FIPA-SL language
+        sd.addLanguages(FIPANames.ContentLanguage.FIPA_SL);
+        dfd.addServices(sd);
+
+        DFService.register(this, dfd);
     }
 
     @Override
