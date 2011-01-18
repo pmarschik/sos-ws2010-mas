@@ -34,28 +34,28 @@ public class GamemasterAgent extends Agent {
 
         }
 
-        /*
-                @Override
-                protected ACLMessage handleSubscription(ACLMessage subscription) {
-                    // handle a subscription request
-                    // if subscription is ok, create it
-                    try {
-                        createSubscription(subscription);
-                    } catch (Exception e) {
-                        ACLMessage refuse = new ACLMessage(ACLMessage.REFUSE);
-                        refuse.addReceiver(subscription.getSender());
-                        refuse.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
+        @Override
+        protected ACLMessage handleSubscription(ACLMessage subscription) {
+            // handle a subscription request
+            // if subscription is ok, create it
+            try {
+                createSubscription(subscription);
+            } catch (Exception e) {
+                ACLMessage refuse = new ACLMessage(ACLMessage.REFUSE);
+                refuse.addReceiver(subscription.getSender());
+                refuse.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
 
-                        return refuse;
-                    }
-                    // if successful, should answer (return) with AGREE; otherwise with REFUSE or NOT_UNDERSTOOD
-                    ACLMessage agree = new ACLMessage(ACLMessage.AGREE);
-                    agree.addReceiver(subscription.getSender());
-                    agree.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
+                return refuse;
+            }
 
-                    return agree;
-                }
-        */
+            // if successful, should answer (return) with AGREE; otherwise with REFUSE or NOT_UNDERSTOOD
+            ACLMessage agree = new ACLMessage(ACLMessage.AGREE);
+            agree.addReceiver(subscription.getSender());
+            agree.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
+
+            return agree;
+        }
+
         public void notify(ACLMessage inform) {
             // this is the method you invoke ("call-back") for creating a new inform message;
             // it is not part of the SubscriptionResponder API, so rename it as you like         

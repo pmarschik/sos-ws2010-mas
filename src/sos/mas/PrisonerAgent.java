@@ -2,6 +2,7 @@ package sos.mas;
 
 import jade.core.AID;
 import jade.core.Agent;
+import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.ParallelBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.*;
@@ -15,6 +16,64 @@ import jade.proto.SubscriptionInitiator;
 import java.util.Iterator;
 
 public class PrisonerAgent extends Agent {
+
+    private abstract class StrategyBehaviour extends OneShotBehaviour {
+        @Override
+        public void action() {
+            AchieveREResponder p = (AchieveREResponder) parent;
+
+            ACLMessage query = (ACLMessage) getDataStore().get(p.REQUEST_KEY);
+            ACLMessage response = (ACLMessage) getDataStore().get(p.RESPONSE_KEY);
+
+            ACLMessage inform = prepareResultNotification(query, response);
+
+            out("replying with %s", inform.getContent());
+
+            getDataStore().put(p.RESULT_NOTIFICATION_KEY, inform);
+        }
+
+        protected abstract ACLMessage prepareResultNotification(ACLMessage query, ACLMessage response);
+    }
+
+    public class ConstantStrategy extends StrategyBehaviour {
+
+        private boolean comply;
+
+        public ConstantStrategy(boolean comply) { this.comply = comply; }
+
+        @Override
+        protected ACLMessage prepareResultNotification(ACLMessage query, ACLMessage response) {
+            ACLMessage inform = query.createReply();
+            inform.setPerformative(ACLMessage.INFORM);
+
+            // TODO replace with FIPA SL
+            inform.setContent(String.format("(%s)", comply));
+
+            return inform;
+        }
+    }
+
+    public class RandomStrategy extends StrategyBehaviour {
+
+        private double chanceForComply;
+
+        public RandomStrategy() { this(0.2); }
+
+        public RandomStrategy(double chanceForComply) { this.chanceForComply = chanceForComply; }
+
+        @Override
+        protected ACLMessage prepareResultNotification(ACLMessage query, ACLMessage response) {
+            ACLMessage inform = query.createReply();
+            inform.setPerformative(ACLMessage.INFORM);
+
+            boolean comply = Math.random() > (1 - chanceForComply);
+
+            // TODO replace with FIPA SL
+            inform.setContent(String.format("(%s)", comply));
+
+            return inform;
+        }
+    }
 
     private GameHistory history = new GameHistory();
 
@@ -47,30 +106,18 @@ public class PrisonerAgent extends Agent {
                 MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_QUERY),
                 MessageTemplate.MatchPerformative(ACLMessage.QUERY_IF)), MessageTemplate.MatchContent("(guilty)"));
 
-        return new AchieveREResponder(this, queryMessageTemplate) {
+        AchieveREResponder arer = new AchieveREResponder(this, queryMessageTemplate) {
             @Override
             protected ACLMessage handleRequest(ACLMessage request) throws NotUnderstoodException, RefuseException {
                 ACLMessage agree = request.createReply();
                 agree.setPerformative(ACLMessage.AGREE);
                 return agree;
             }
-
-            @Override
-            protected ACLMessage prepareResultNotification(ACLMessage request, ACLMessage response)
-                    throws FailureException {
-                boolean comply = Math.random() > .8;
-
-                out((comply ? "complies" : "defects"));
-
-                ACLMessage inform = request.createReply();
-                inform.setPerformative(ACLMessage.INFORM);
-
-                // TODO replace with FIPA SL
-                inform.setContent(comply ? "(true)" : "(false)");
-
-                return inform;
-            }
         };
+
+        arer.registerPrepareResultNotification(new RandomStrategy(0.5));
+
+        return arer;
     }
 
     private SubscriptionInitiator createSubscriptionProtocol(AID gamemasterAID) {
