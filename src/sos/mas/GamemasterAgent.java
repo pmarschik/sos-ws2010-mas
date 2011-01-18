@@ -1,14 +1,17 @@
 package sos.mas;
 
+import jade.content.onto.basic.Action;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.domain.DFService;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
-import jade.domain.FIPAAgentManagement.ServiceDescription;
+import jade.domain.FIPAAgentManagement.*;
 import jade.domain.FIPAException;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
+import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
+import jade.proto.SubscriptionResponder;
+import jade.proto.SubscriptionResponder.Subscription;
 
 import java.util.Date;
 import java.util.Vector;
@@ -19,6 +22,26 @@ public class GamemasterAgent extends Agent {
         System.out.print("[" + getLocalName() + "] ");
         System.out.println(String.format(text, args));
     }
+
+    private class GMSubscriptionManager implements SubscriptionResponder.SubscriptionManager {
+
+        @Override
+        public boolean deregister(Subscription arg0) throws FailureException {
+            // TODO Auto-generated method stub
+            return false;
+        }
+
+        @Override
+        public boolean register(Subscription arg0) throws RefuseException,
+                NotUnderstoodException {
+            // TODO Auto-generated method stub
+            return false;
+        }
+
+    }
+
+    private GMSubscriptionManager subscriptionManager = null;
+    private SubscriptionResponder subscriptionResponder = null;
 
     @Override
     protected void setup() {
@@ -49,6 +72,30 @@ public class GamemasterAgent extends Agent {
             dfd.addServices(sd);
 
             DFService.register(this, dfd);
+
+            subscriptionManager = new GMSubscriptionManager();
+
+            MessageTemplate subscribeMsg =
+                    MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
+
+            addBehaviour(new SubscriptionResponder(this, subscribeMsg, subscriptionManager) {
+                // If the CANCEL message has a meaningful content, use it.
+                // Otherwise deregister the Subscription with the same convID (default)
+                protected ACLMessage handleCancel(ACLMessage cancel) throws FailureException {
+                    try {
+                        Action act = (Action) myAgent.getContentManager().extractContent(cancel);
+                        ACLMessage subsMsg = (ACLMessage) act.getAction();
+                        Subscription s = getSubscription(subsMsg);
+                        if (s != null) {
+                            mySubscriptionManager.deregister(s);
+                            s.close();
+                        }
+                    } catch (Exception e) {
+                        super.handleCancel(cancel);
+                    }
+                    return null;
+                }
+            });
 
             ACLMessage msg = new ACLMessage(ACLMessage.QUERY_IF);
             msg.addReceiver(new AID(prisoner1, AID.ISLOCALNAME));
