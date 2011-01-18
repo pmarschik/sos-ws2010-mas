@@ -101,7 +101,13 @@ public class GamemasterAgent extends Agent {
             subscriptionManager = new GMSubscriptionManager();
 
             MessageTemplate subscribeMsg = 
-            MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
+            	MessageTemplate.and(
+                        
+            			MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.SUBSCRIBE),
+            			                                                                       
+            			MessageTemplate.MatchPerformative(ACLMessage.CANCEL)),
+            			                                       
+            			MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE)); 
             
             subscriptionResponder = new SubscriptionResponder(this, subscribeMsg, subscriptionManager)
             {
