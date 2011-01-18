@@ -2,7 +2,6 @@ package sos.mas;
 
 import jade.core.AID;
 import jade.core.Agent;
-import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.ParallelBehaviour;
 import jade.core.behaviours.SequentialBehaviour;
 import jade.domain.DFService;
@@ -13,7 +12,6 @@ import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
-import jade.proto.SubscriptionResponder;
 
 import java.util.Date;
 import java.util.Vector;
@@ -25,14 +23,15 @@ public class GamemasterAgent extends Agent {
         System.out.println(String.format(text, args));
     }
 
-    class GMSubscriptionResponder extends SubscriptionResponder {
-        GMSubscriptionResponder(Agent a) {
+    private class SubscriptionResponder extends jade.proto.SubscriptionResponder {
+        public SubscriptionResponder(Agent a) {
             super(a, MessageTemplate.and(
                     MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.SUBSCRIBE),
                             MessageTemplate.MatchPerformative(ACLMessage.CANCEL)),
                     MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE)));
         }
 
+        @Override
         protected ACLMessage handleSubscription(ACLMessage subscription) {
             // handle a subscription request
             // if subscription is ok, create it        	
@@ -53,7 +52,6 @@ public class GamemasterAgent extends Agent {
             return agree;
         }
 
-
         protected void notify(ACLMessage inform) {
             // this is the method you invoke ("call-back") for creating a new inform message;
             // it is not part of the SubscriptionResponder API, so rename it as you like         
@@ -61,11 +59,11 @@ public class GamemasterAgent extends Agent {
             Vector subs = getSubscriptions();
 
             for (int i = 0; i < subs.size(); i++)
-                ((SubscriptionResponder.Subscription) subs.elementAt(i)).notify(inform);
+                ((jade.proto.SubscriptionResponder.Subscription) subs.elementAt(i)).notify(inform);
         }
     }
 
-    private GMSubscriptionResponder subscriptionResponder;
+    private SubscriptionResponder subscriptionResponder;
     private AID prisoner1;
     private AID prisoner2;
     private int iterations;
@@ -78,7 +76,7 @@ public class GamemasterAgent extends Agent {
             handleArguments();
             registerService();
 
-            subscriptionResponder = new GMSubscriptionResponder(this);
+            subscriptionResponder = new SubscriptionResponder(this);
             SequentialBehaviour queryProtocol = createQueryProtocol();
 
             ParallelBehaviour behaviour = new ParallelBehaviour(this, ParallelBehaviour.WHEN_ALL);
@@ -108,13 +106,6 @@ public class GamemasterAgent extends Agent {
         for (int i = 0; i < iterations; i++) {
             behaviour.addSubBehaviour(new AchieveREInitiator(this, msg) {
                 @Override
-                public void registerHandleOutOfSequence(Behaviour b) {
-                    out("out of sequence!");
-
-                    super.registerHandleOutOfSequence(
-                            b);    //To change body of overridden methods use File | Settings | File Templates.
-                }
-
                 protected void handleFailure(ACLMessage failure) {
                     if (failure.getSender().equals(myAgent.getAMS()))
                         // FAILURE notification from the JADE runtime: the receiver does not exist
@@ -123,8 +114,9 @@ public class GamemasterAgent extends Agent {
                         out("Agent %s failed to perform the requested action", failure.getSender().getName());
                 }
 
+                @Override
                 protected void handleAllResultNotifications(Vector notifications) {
-                    out("handling result notifications");
+                    out("handling %d result notifications", notifications.size());
 
                     for (Object notification : notifications) {
                         ACLMessage inform = (ACLMessage) notification;

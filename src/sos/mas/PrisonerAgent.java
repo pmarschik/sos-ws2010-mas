@@ -30,7 +30,7 @@ public class PrisonerAgent extends Agent {
 
             AID gamemasterAID = getGamemasterService();
 
-            ParallelBehaviour behaviour = new ParallelBehaviour(this, ParallelBehaviour.WHEN_ANY);
+            ParallelBehaviour behaviour = new ParallelBehaviour(this, ParallelBehaviour.WHEN_ALL);
             behaviour.addSubBehaviour(createQueryProtocol());
             behaviour.addSubBehaviour(createSubscriptionProtocol(gamemasterAID));
 
@@ -50,6 +50,8 @@ public class PrisonerAgent extends Agent {
         return new AchieveREResponder(this, queryMessageTemplate) {
             @Override
             protected ACLMessage handleRequest(ACLMessage request) throws NotUnderstoodException, RefuseException {
+                out("sending agree to %s", request.getSender().getName());
+
                 ACLMessage agree = request.createReply();
                 agree.setPerformative(ACLMessage.AGREE);
                 return agree;
