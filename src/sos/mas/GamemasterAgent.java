@@ -31,7 +31,12 @@ public class GamemasterAgent extends Agent {
 	    	public Answer answer2;
 	    }  
 	    
-	    public HashMap<Integer, AnswersPrisoners> answers = new HashMap<Integer, AnswersPrisoners> ();
+	    public HashMap<Long, AnswersPrisoners> answers = new HashMap<Long, AnswersPrisoners> ();
+	    
+	    public long generateConversationId()
+	    {
+	    	return System.currentTimeMillis();
+	    }
 	}
 	
     @Override
