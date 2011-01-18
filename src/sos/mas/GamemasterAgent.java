@@ -54,7 +54,7 @@ public class GamemasterAgent extends Agent {
             ServiceDescription sd = new ServiceDescription();
             sd.setName(getLocalName());
             sd.setType("prisoners-dilemma-gamemaster");
-            // Agents that want to use this service need to "know" the weather-forecast-ontology
+            // Agents that want to use this service need to "know" the prisoners-dilemma-ontology
             sd.addOntologies("prisoners-dilemma-ontology");
             // Agents that want to use this service need to "speak" the FIPA-SL language
             sd.addLanguages(FIPANames.ContentLanguage.FIPA_SL);
