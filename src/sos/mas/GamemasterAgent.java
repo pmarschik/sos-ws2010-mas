@@ -23,25 +23,39 @@ public class GamemasterAgent extends Agent {
         System.out.println(String.format(text, args));
     }
 
-    private class SubscriptionManager implements SubscriptionResponder.SubscriptionManager {
-
-        @Override
-        public boolean deregister(Subscription arg0) throws FailureException {
-            // TODO Auto-generated method stub
-            return false;
+    class GMSubscriptionResponder extends SubscriptionResponder {
+        GMSubscriptionResponder(Agent a) {
+            super(a, MessageTemplate.and(
+                                       
+MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.SUBSCRIBE),
+                                                                       
+MessageTemplate.MatchPerformative(ACLMessage.CANCEL)),
+                                       
+MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE)));
         }
+       
+        protected ACLMessage handleSubscription(ACLMessage subscription_msg) {
+            // handle a subscription request
 
-        @Override
-        public boolean register(Subscription arg0) throws RefuseException,
-                NotUnderstoodException {
-            // TODO Auto-generated method stub
-            return false;
+            // if subscription is ok, create it
+            createSubscription(subscription_msg);
+
+            // if successful, should answer (return) with AGREE; otherwise with REFUSE or NOT_UNDERSTOOD
+            return null; // todo: change
         }
+       
+        protected void notify(ACLMessage inform) {
+            // this is the method you invoke ("call-back") for creating a new inform message;
+            // it is not part of the SubscriptionResponder API, so rename it as you like         
+            // go through every subscription
+            Vector subs = getSubscriptions();
+            for(int i=0; i<subs.size(); i++)
+                ((SubscriptionResponder.Subscription)
+subs.elementAt(i)).notify(inform);
+        }
+    } 
 
-    }
-
-    private SubscriptionManager subscriptionManager;
-    private SubscriptionResponder subscriptionResponder;
+    private GMSubscriptionResponder subscriptionResponder;
     private AID prisoner1;
     private AID prisoner2;
     private int iterations;
@@ -53,34 +67,9 @@ public class GamemasterAgent extends Agent {
 
             handleArguments();
             registerService();
+            
 
-            subscriptionManager = new SubscriptionManager();
-
-            MessageTemplate subscribeMsg =
-                    MessageTemplate.and(
-                            MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.SUBSCRIBE),
-                                    MessageTemplate.MatchPerformative(ACLMessage.CANCEL)),
-                            MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE));
-
-            subscriptionResponder = new SubscriptionResponder(this, subscribeMsg, subscriptionManager) {
-                // If the CANCEL message has a meaningful content, use it.
-                // Otherwise deregister the Subscription with the same convID (default)
-                protected ACLMessage handleCancel(ACLMessage cancel) throws FailureException {
-                    try {
-                        Action act = (Action) myAgent.getContentManager().extractContent(cancel);
-                        ACLMessage subsMsg = (ACLMessage) act.getAction();
-                        Subscription s = getSubscription(subsMsg);
-                        if (s != null) {
-                            mySubscriptionManager.deregister(s);
-                            s.close();
-                        }
-                    } catch (Exception e) {
-                        super.handleCancel(cancel);
-                    }
-                    return null;
-                }
-            };
-
+            subscriptionResponder = new GMSubscriptionResponder(this);
             addBehaviour(subscriptionResponder);
 
             startQueryProtocol();
