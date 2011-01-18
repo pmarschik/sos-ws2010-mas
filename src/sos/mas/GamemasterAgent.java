@@ -1,17 +1,19 @@
 package sos.mas;
 
-import jade.content.onto.basic.Action;
 import jade.core.AID;
 import jade.core.Agent;
+import jade.core.behaviours.Behaviour;
+import jade.core.behaviours.ParallelBehaviour;
+import jade.core.behaviours.SequentialBehaviour;
 import jade.domain.DFService;
-import jade.domain.FIPAAgentManagement.*;
+import jade.domain.FIPAAgentManagement.DFAgentDescription;
+import jade.domain.FIPAAgentManagement.ServiceDescription;
 import jade.domain.FIPAException;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
 import jade.proto.SubscriptionResponder;
-import jade.proto.SubscriptionResponder.Subscription;
 
 import java.util.Date;
 import java.util.Vector;
@@ -26,34 +28,35 @@ public class GamemasterAgent extends Agent {
     class GMSubscriptionResponder extends SubscriptionResponder {
         GMSubscriptionResponder(Agent a) {
             super(a, MessageTemplate.and(
-                                       
-MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.SUBSCRIBE),
-                                                                       
-MessageTemplate.MatchPerformative(ACLMessage.CANCEL)),
-                                       
-MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE)));
+                    MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.SUBSCRIBE),
+                            MessageTemplate.MatchPerformative(ACLMessage.CANCEL)),
+                    MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE)));
         }
-       
-        protected ACLMessage handleSubscription(ACLMessage subscription_msg) {
+
+        protected ACLMessage handleSubscription(ACLMessage subscription) {
+            out("got subscription request by " + subscription.getSender().getName());
             // handle a subscription request
 
             // if subscription is ok, create it
-            createSubscription(subscription_msg);
+            createSubscription(subscription);
+
+            ACLMessage agree = subscription.createReply();
+            agree.setPerformative(ACLMessage.AGREE);
 
             // if successful, should answer (return) with AGREE; otherwise with REFUSE or NOT_UNDERSTOOD
-            return null; // todo: change
+            return agree; // todo: change
         }
-       
+
         protected void notify(ACLMessage inform) {
             // this is the method you invoke ("call-back") for creating a new inform message;
             // it is not part of the SubscriptionResponder API, so rename it as you like         
             // go through every subscription
             Vector subs = getSubscriptions();
-            for(int i=0; i<subs.size(); i++)
+            for (int i = 0; i < subs.size(); i++)
                 ((SubscriptionResponder.Subscription)
-subs.elementAt(i)).notify(inform);
+                        subs.elementAt(i)).notify(inform);
         }
-    } 
+    }
 
     private GMSubscriptionResponder subscriptionResponder;
     private AID prisoner1;
@@ -67,12 +70,15 @@ subs.elementAt(i)).notify(inform);
 
             handleArguments();
             registerService();
-            
 
             subscriptionResponder = new GMSubscriptionResponder(this);
-            addBehaviour(subscriptionResponder);
+            SequentialBehaviour queryProtocol = createQueryProtocol();
 
-            startQueryProtocol();
+            ParallelBehaviour behaviour = new ParallelBehaviour(this, ParallelBehaviour.WHEN_ALL);
+            behaviour.addSubBehaviour(subscriptionResponder);
+            behaviour.addSubBehaviour(queryProtocol);
+
+            addBehaviour(behaviour);
         } catch (FIPAException fe) {
             fe.printStackTrace();
 
@@ -80,7 +86,7 @@ subs.elementAt(i)).notify(inform);
         }
     }
 
-    private void startQueryProtocol() {
+    private SequentialBehaviour createQueryProtocol() {
         ACLMessage msg = new ACLMessage(ACLMessage.QUERY_IF);
         msg.addReceiver(prisoner1);
         msg.addReceiver(prisoner2);
@@ -90,8 +96,18 @@ subs.elementAt(i)).notify(inform);
         // TODO replace by FIPA SL
         msg.setContent("guilty");
 
+        SequentialBehaviour behaviour = new SequentialBehaviour(this);
+
         for (int i = 0; i < iterations; i++) {
-            addBehaviour(new AchieveREInitiator(this, msg) {
+            behaviour.addSubBehaviour(new AchieveREInitiator(this, msg) {
+                @Override
+                public void registerHandleOutOfSequence(Behaviour b) {
+                    out("out of sequence!");
+
+                    super.registerHandleOutOfSequence(
+                            b);    //To change body of overridden methods use File | Settings | File Templates.
+                }
+
                 protected void handleFailure(ACLMessage failure) {
                     if (failure.getSender().equals(myAgent.getAMS()))
                         // FAILURE notification from the JADE runtime: the receiver does not exist
@@ -101,6 +117,8 @@ subs.elementAt(i)).notify(inform);
                 }
 
                 protected void handleAllResultNotifications(Vector notifications) {
+                    out("handling result notifications");
+
                     for (Object notification : notifications) {
                         ACLMessage inform = (ACLMessage) notification;
 
@@ -115,6 +133,8 @@ subs.elementAt(i)).notify(inform);
                 }
             });
         }
+
+        return behaviour;
     }
 
     private void handleArguments() {
