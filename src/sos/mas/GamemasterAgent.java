@@ -1,3 +1,5 @@
+package sos.mas;
+
 import jade.core.Agent;
 
 public class GamemasterAgent extends Agent {
