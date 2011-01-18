@@ -15,22 +15,24 @@ import java.util.Date;
 import java.util.Vector;
 
 public class GamemasterAgent extends Agent {
-    private static final int PointsBothComplied = 3; 
-    private static final int PointsWinner = 5;
-    private static final int PointsLoser = 0;
-    private static final int PointsBothDefected = 1;
-    
-    private class Answer {
-    	public String PrisonerAID;
-    	public boolean Answer;
-    }
-    
-    private class AnswersPrisoners {
-    	public Answer answer1;
-    	public Answer answer2;
-    }  
-    
-    private HashMap<Integer, AnswersPrisoners> answers = new HashMap<Integer, AnswersPrisoners> ();
+	private static class DataStorage {
+	    public static final int PointsBothComplied = 3; 
+	    public static final int PointsWinner = 5;
+	    public static final int PointsLoser = 0;
+	    public static final int PointsBothDefected = 1;
+	    
+	    public class Answer {
+	    	public String PrisonerAID;
+	    	public boolean Answer;
+	    }
+	    
+	    public class AnswersPrisoners {
+	    	public Answer answer1;
+	    	public Answer answer2;
+	    }  
+	    
+	    public HashMap<Integer, AnswersPrisoners> answers = new HashMap<Integer, AnswersPrisoners> ();
+	}
 	
     @Override
     protected void setup() {
