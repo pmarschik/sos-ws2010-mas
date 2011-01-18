@@ -15,10 +15,17 @@ import java.util.Iterator;
 
 public class PrisonerAgent extends Agent {
 
+    private GameHistory history = new GameHistory();
+
+    private void out(String text, Object... args) {
+        System.out.print("[" + getLocalName() + "] ");
+        System.out.println(String.format(text, args));
+    }
+
     @Override
     protected void setup() {
         try {
-            System.out.println("Starting prisoner agent " + getLocalName());
+            out("Starting");
 
             DFAgentDescription gamemasterServiceTemplate = new DFAgentDescription();
             ServiceDescription gamemasterServiceTemplateSD = new ServiceDescription();
@@ -28,7 +35,9 @@ public class PrisonerAgent extends Agent {
             SearchConstraints sc = new SearchConstraints();
             sc.setMaxResults(1L);
 
-            DFAgentDescription[] results = DFService.search(this, gamemasterServiceTemplate, sc);
+            DFAgentDescription[] results =
+                    DFService.searchUntilFound(this, getDefaultDF(), gamemasterServiceTemplate, sc,
+                            10000L);
 
             DFAgentDescription dfd = results[0];
             AID gamemasterAID = dfd.getName();
@@ -37,12 +46,8 @@ public class PrisonerAgent extends Agent {
             Iterator it = dfd.getAllServices();
             while (it.hasNext()) {
                 ServiceDescription sd = (ServiceDescription) it.next();
-                if (sd.getType().equals("prisoners-dilemma-gamemaster")) {
-                    System.out.println(
-                            "Agent " + getLocalName() + " found the following prisoners-dilemma-gamemaster services:");
-                    System.out.println(
-                            "- Service \"" + sd.getName() + "\" provided by agent " + gamemasterAID.getName());
-                }
+                if (sd.getType().equals("prisoners-dilemma-gamemaster"))
+                    out("found the following service: %s by %s", sd.getName(), gamemasterAID.getName());
             }
 
             MessageTemplate queryMessageTemplate = MessageTemplate.and(MessageTemplate.and(
@@ -54,7 +59,22 @@ public class PrisonerAgent extends Agent {
             subscribeMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
 
             addBehaviour(new SubscriptionInitiator(this, subscribeMsg) {
+                @Override
+                protected void handleRefuse(ACLMessage refuse) {
+                    out("Failed to subscribe to %s", refuse.getSender().getName());
+                }
 
+                @Override
+                protected void handleInform(ACLMessage inform) {
+                    String content = inform.getContent();
+
+                    String contents[] = content.split(" ");
+                    Integer id = Integer.parseInt(contents[0]);
+                    boolean answerMe = Boolean.parseBoolean(contents[1]);
+                    boolean answerOther = Boolean.parseBoolean(contents[2]);
+
+                    history.addAnswer(id, new GameHistory.AnswersPrisoners(null, answerMe, null, answerOther));
+                }
             });
 
             addBehaviour(new AchieveREResponder(this, queryMessageTemplate) {
@@ -70,7 +90,7 @@ public class PrisonerAgent extends Agent {
                         throws FailureException {
                     boolean comply = Math.random() > .8;
 
-                    System.out.println("Prisoner " + getLocalName() + " " + (comply ? "complies" : "defects"));
+                    out((comply ? "complies" : "defects"));
 
                     ACLMessage inform = request.createReply();
                     inform.setPerformative(ACLMessage.INFORM);
@@ -89,6 +109,6 @@ public class PrisonerAgent extends Agent {
 
     @Override
     protected void takeDown() {
-        System.out.println("Stopping prisoner agent \"" + getLocalName());
+        out("Stopping");
     }
 }

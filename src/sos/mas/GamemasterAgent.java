@@ -10,39 +10,25 @@ import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.proto.AchieveREInitiator;
 
-import java.util.HashMap;
 import java.util.Date;
 import java.util.Vector;
 
 public class GamemasterAgent extends Agent {
-	private static class DataStorage {
-	    public static final int PointsBothComplied = 3; 
-	    public static final int PointsWinner = 5;
-	    public static final int PointsLoser = 0;
-	    public static final int PointsBothDefected = 1;
-	    
-	    public class Answer {
-	    	public String PrisonerAID;
-	    	public boolean Answer;
-	    }
-	    
-	    public class AnswersPrisoners {
-	    	public Answer answer1;
-	    	public Answer answer2;
-	    }  
-	    
-	    public HashMap<Integer, AnswersPrisoners> answers = new HashMap<Integer, AnswersPrisoners> ();
-	}
-	
+
+    private void out(String text, Object... args) {
+        System.out.print("[" + getLocalName() + "] ");
+        System.out.println(String.format(text, args));
+    }
+
     @Override
     protected void setup() {
         try {
-            System.out.println("Starting gamemaster agent " + getAID().getName());
+            out("Starting");
 
             Object[] args = getArguments();
 
             if (args == null || args.length < 3 || args.length > 3) {
-                System.out.println("Need to supply the names of the two prisoner agents and the number of iterations.");
+                out("Need to supply the names of the two prisoner agents and the number of iterations.");
 
                 takeDown();
             }
@@ -75,30 +61,23 @@ public class GamemasterAgent extends Agent {
             for (int i = 0; i < iterations; i++) {
                 addBehaviour(new AchieveREInitiator(this, msg) {
                     protected void handleFailure(ACLMessage failure) {
-                        if (failure.getSender().equals(myAgent.getAMS())) {
-                            // FAILURE notification from the JADE runtime: the receiver
-                            // does not exist
-                            System.out.println("Responder does not exist");
-                        } else {
-                            System.out.println(
-                                    "Agent " + failure.getSender().getName() +
-                                            " failed to perform the requested action");
-                        }
+                        if (failure.getSender().equals(myAgent.getAMS()))
+                            // FAILURE notification from the JADE runtime: the receiver does not exist
+                            out("Responder does not exist");
+                        else
+                            out("Agent %s failed to perform the requested action", failure.getSender().getName());
                     }
 
                     protected void handleAllResultNotifications(Vector notifications) {
                         for (Object notification : notifications) {
                             ACLMessage inform = (ACLMessage) notification;
 
-
                             // TODO more comprehensive parsing (i.e. handle errors)
                             boolean complied = inform.getContent().equals("(true)");
 
                             // TODO store result
 
-                            System.out.println(
-                                    "Agent " + inform.getSender().getName() + " " +
-                                            (complied ? "complied" : "defected"));
+                            out("Agent %s %s", inform.getSender().getName(), (complied ? "complied" : "defected"));
                         }
                     }
                 });
@@ -112,6 +91,6 @@ public class GamemasterAgent extends Agent {
 
     @Override
     protected void takeDown() {
-        System.out.println("Stopping gamemaster agent \"" + getAID().getName());
+        out("Stopping");
     }
 }
