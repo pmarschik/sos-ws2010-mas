@@ -38,7 +38,7 @@ public class PrisonerAgent extends Agent {
         } catch (FIPAException e) {
             e.printStackTrace();
 
-            takeDown();
+            doDelete();
         }
     }
 
@@ -50,8 +50,6 @@ public class PrisonerAgent extends Agent {
         return new AchieveREResponder(this, queryMessageTemplate) {
             @Override
             protected ACLMessage handleRequest(ACLMessage request) throws NotUnderstoodException, RefuseException {
-                out("sending agree to %s", request.getSender().getName());
-
                 ACLMessage agree = request.createReply();
                 agree.setPerformative(ACLMessage.AGREE);
                 return agree;
@@ -83,7 +81,7 @@ public class PrisonerAgent extends Agent {
         return new SubscriptionInitiator(this, subscribeMsg) {
             @Override
             protected void handleRefuse(ACLMessage refuse) {
-                out("Failed to subscribe to %s", refuse.getSender().getName());
+                out("%s failed to subscribe", refuse.getSender().getName());
             }
 
             @Override
@@ -101,11 +99,24 @@ public class PrisonerAgent extends Agent {
 
                 // TODO replace with FIPA SL
                 String contents[] = content.split(" ");
-                Integer id = Integer.parseInt(contents[0]);
-                boolean answerMe = Boolean.parseBoolean(contents[1]);
-                boolean answerOther = Boolean.parseBoolean(contents[2]);
+                String id = contents[0];
+                AID aid1 = new AID(contents[1], AID.ISLOCALNAME);
+                boolean answer1 = Boolean.parseBoolean(contents[2]);
+                AID aid2 = new AID(contents[3], AID.ISLOCALNAME);
+                boolean answer2 = Boolean.parseBoolean(contents[2]);
 
-                history.addAnswer(id, new GameHistory.AnswersPrisoners(null, answerMe, null, answerOther));
+                if (aid2.equals(myAgent.getAID())) {
+                    AID aidT = aid1;
+                    boolean answertT = answer1;
+
+                    aid1 = aid2;
+                    answer1 = answer2;
+
+                    aid2 = aidT;
+                    answer2 = answertT;
+                }
+
+                history.addAnswer(id, new GameHistory.AnswersPrisoners(aid1, answer1, aid2, answer2));
             }
         };
     }

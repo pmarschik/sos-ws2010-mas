@@ -23,7 +23,7 @@ class GameHistory {
             return prisonerAID;
         }
 
-        public boolean isAnswer() {
+        public boolean getAnswer() {
             return answer;
         }
     }
@@ -46,13 +46,13 @@ class GameHistory {
         }
     }
 
-    private HashMap<Integer, AnswersPrisoners> answers = new HashMap<Integer, AnswersPrisoners>();
+    private HashMap<String, AnswersPrisoners> answers = new HashMap<String, AnswersPrisoners>();
 
-    public HashMap<Integer, AnswersPrisoners> getAnswers() {
+    public HashMap<String, AnswersPrisoners> getAnswers() {
         return answers;
     }
 
-    public void addAnswer(Integer id, AnswersPrisoners answer) {
+    public void addAnswer(String id, AnswersPrisoners answer) {
         answers.put(id, answer);
     }
 

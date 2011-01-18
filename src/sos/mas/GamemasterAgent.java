@@ -13,7 +13,9 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Vector;
 
 public class GamemasterAgent extends Agent {
@@ -22,9 +24,6 @@ public class GamemasterAgent extends Agent {
         System.out.print("[" + getLocalName() + "] ");
         System.out.println(String.format(text, args));
     }
-
-
-
 
     private class SubscriptionResponder extends jade.proto.SubscriptionResponder {
         public SubscriptionResponder(Agent a) {
@@ -35,30 +34,29 @@ public class GamemasterAgent extends Agent {
 
         }
 
-        @Override
-        protected ACLMessage handleSubscription(ACLMessage subscription) {
-            // handle a subscription request
-            // if subscription is ok, create it        	
-            try {
-                createSubscription(subscription);
-            } catch (Exception e) {
-                ACLMessage refuse = new ACLMessage(ACLMessage.REFUSE);
-                refuse.addReceiver(subscription.getSender());
-                refuse.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
+        /*
+                @Override
+                protected ACLMessage handleSubscription(ACLMessage subscription) {
+                    // handle a subscription request
+                    // if subscription is ok, create it
+                    try {
+                        createSubscription(subscription);
+                    } catch (Exception e) {
+                        ACLMessage refuse = new ACLMessage(ACLMessage.REFUSE);
+                        refuse.addReceiver(subscription.getSender());
+                        refuse.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
 
-                return refuse;
-            }
-            // if successful, should answer (return) with AGREE; otherwise with REFUSE or NOT_UNDERSTOOD
-            ACLMessage agree = new ACLMessage(ACLMessage.AGREE);
-            agree.addReceiver(subscription.getSender());
-            agree.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
+                        return refuse;
+                    }
+                    // if successful, should answer (return) with AGREE; otherwise with REFUSE or NOT_UNDERSTOOD
+                    ACLMessage agree = new ACLMessage(ACLMessage.AGREE);
+                    agree.addReceiver(subscription.getSender());
+                    agree.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
 
-            return agree;
-        }       
-       
-
-
-        protected void notify(ACLMessage inform) {
+                    return agree;
+                }
+        */
+        public void notify(ACLMessage inform) {
             // this is the method you invoke ("call-back") for creating a new inform message;
             // it is not part of the SubscriptionResponder API, so rename it as you like         
 
@@ -74,6 +72,7 @@ public class GamemasterAgent extends Agent {
     private AID prisoner1;
     private AID prisoner2;
     private int iterations;
+    private GameHistory gameHistory = new GameHistory();
 
     @Override
     protected void setup() {
@@ -94,7 +93,7 @@ public class GamemasterAgent extends Agent {
         } catch (FIPAException fe) {
             fe.printStackTrace();
 
-            takeDown();
+            doDelete();
         }
     }
 
@@ -106,7 +105,7 @@ public class GamemasterAgent extends Agent {
 
         msg.setReplyByDate(new Date(System.currentTimeMillis() + 10000));
         // TODO replace by FIPA SL
-        msg.setContent("guilty");
+        msg.setContent("(guilty)");
 
         SequentialBehaviour behaviour = new SequentialBehaviour(this);
 
@@ -125,6 +124,10 @@ public class GamemasterAgent extends Agent {
                 protected void handleAllResultNotifications(Vector notifications) {
                     out("handling %d result notifications", notifications.size());
 
+                    if (notifications.size() == 0) return;
+
+                    List<GameHistory.Answer> answers = new ArrayList<GameHistory.Answer>(notifications.size());
+
                     for (Object notification : notifications) {
                         ACLMessage inform = (ACLMessage) notification;
 
@@ -134,8 +137,20 @@ public class GamemasterAgent extends Agent {
 
                         // TODO store result
 
+                        answers.add(new GameHistory.Answer(inform.getSender(), complied));
+
                         out("Agent %s %s", inform.getSender().getName(), (complied ? "complied" : "defected"));
                     }
+
+                    String id = ((ACLMessage) notifications.get(0)).getConversationId();
+                    gameHistory.addAnswer(id, new GameHistory.AnswersPrisoners(answers.get(0).getPrisonerAID(),
+                            answers.get(0).getAnswer(), answers.get(1).getPrisonerAID(), answers.get(1).getAnswer()));
+
+                    ACLMessage inform = new ACLMessage(ACLMessage.INFORM);
+                    inform.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
+                    inform.setContent(String.format("%s %s %s %s %s", id, answers.get(0).getPrisonerAID(),
+                            answers.get(0).getAnswer(), answers.get(1).getPrisonerAID(), answers.get(1).getAnswer()));
+                    subscriptionResponder.notify(inform);
                 }
             });
         }
