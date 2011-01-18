@@ -34,24 +34,35 @@ MessageTemplate.MatchPerformative(ACLMessage.CANCEL)),
 MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE)));
         }
        
-        protected ACLMessage handleSubscription(ACLMessage subscription_msg) {
+        protected ACLMessage handleSubscription(ACLMessage subscription_msg) 
+        {
             // handle a subscription request
-
-            // if subscription is ok, create it
-            createSubscription(subscription_msg);
-
-            // if successful, should answer (return) with AGREE; otherwise with REFUSE or NOT_UNDERSTOOD
-            return null; // todo: change
+            // if subscription is ok, create it        	
+            try {
+				createSubscription(subscription_msg);
+			} catch (Exception e) {
+	            ACLMessage answerMsg = new ACLMessage(ACLMessage.REFUSE);
+	            answerMsg.addReceiver(subscription_msg.getSender());
+	            answerMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
+			}
+			// if successful, should answer (return) with AGREE; otherwise with REFUSE or NOT_UNDERSTOOD
+            ACLMessage answerMsg = new ACLMessage(ACLMessage.AGREE);
+            answerMsg.addReceiver(subscription_msg.getSender());
+            answerMsg.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
+            
+            return answerMsg;
         }
+        
        
-        protected void notify(ACLMessage inform) {
+        protected void notify(ACLMessage inform) 
+        {
             // this is the method you invoke ("call-back") for creating a new inform message;
             // it is not part of the SubscriptionResponder API, so rename it as you like         
             // go through every subscription
             Vector subs = getSubscriptions();
+            
             for(int i=0; i<subs.size(); i++)
-                ((SubscriptionResponder.Subscription)
-subs.elementAt(i)).notify(inform);
+                ((SubscriptionResponder.Subscription)	subs.elementAt(i)).notify(inform);
         }
     } 
 
