@@ -6,6 +6,7 @@ import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.proto.AchieveREInitiator;
 
+import java.util.HashMap;
 import java.util.Date;
 import java.util.Vector;
 
@@ -13,7 +14,19 @@ public class GamemasterAgent extends Agent {
     private static final int PointsBothComplied = 3; 
     private static final int PointsWinner = 5;
     private static final int PointsLoser = 0;
-    private static final int PointsBothDefected = 1;	
+    private static final int PointsBothDefected = 1;
+    
+    private class Answer {
+    	public String PrisonerAID;
+    	public boolean Answer;
+    }
+    
+    private class AnswersPrisoners {
+    	public Answer answer1;
+    	public Answer answer2;
+    }  
+    
+    private HashMap<Integer, AnswersPrisoners> answers = new HashMap<Integer, AnswersPrisoners> ();
 	
     @Override
     protected void setup() {
