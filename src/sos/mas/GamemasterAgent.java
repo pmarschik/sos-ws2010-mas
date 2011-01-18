@@ -56,6 +56,40 @@ public class GamemasterAgent extends Agent {
 
             subscriptionManager = new SubscriptionManager();
 
+<<<<<<< HEAD
+            MessageTemplate subscribeMsg = 
+            	MessageTemplate.and(
+                        
+            			MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.SUBSCRIBE),
+            			                                                                       
+            			MessageTemplate.MatchPerformative(ACLMessage.CANCEL)),
+            			                                       
+            			MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE)); 
+            
+            subscriptionResponder = new SubscriptionResponder(this, subscribeMsg, subscriptionManager)
+            {
+            	// If the CANCEL message has a meaningful content, use it. 
+    			// Otherwise deregister the Subscription with the same convID (default)
+    			protected ACLMessage handleCancel(ACLMessage cancel) throws FailureException {
+    				try {
+    					Action act = (Action) myAgent.getContentManager().extractContent(cancel);
+    					ACLMessage subsMsg = (ACLMessage)act.getAction();
+    					Subscription s = getSubscription(subsMsg);
+    					if (s != null) {
+    						mySubscriptionManager.deregister(s);
+    						s.close();
+    					}
+    				}
+    				catch(Exception e) {
+    					super.handleCancel(cancel);
+    				}
+    				return null;
+    			}
+            };
+            
+            addBehaviour(subscriptionResponder);
+            
+=======
             MessageTemplate subscribeMsg =
                     MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
 
@@ -77,6 +111,7 @@ public class GamemasterAgent extends Agent {
                     return null;
                 }
             });
+>>>>>>> 6664a3740dc624998faf79aaa65fe156f9dc170f
 
             startQueryProtocol();
         } catch (FIPAException fe) {
