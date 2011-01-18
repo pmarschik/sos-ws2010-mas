@@ -10,6 +10,11 @@ import java.util.Date;
 import java.util.Vector;
 
 public class GamemasterAgent extends Agent {
+    private static final int PointsBothComplied = 3; 
+    private static final int PointsWinner = 5;
+    private static final int PointsLoser = 0;
+    private static final int PointsBothDefected = 1;	
+	
     @Override
     protected void setup() {
         System.out.println("Starting gamemaster agent \"" + getAID().getName());
