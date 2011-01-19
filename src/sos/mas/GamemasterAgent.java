@@ -19,7 +19,8 @@ import java.util.List;
 import java.util.Vector;
 
 public class GamemasterAgent extends Agent {
-
+	private int RoundsPlayed = 0;
+	
     private void out(String text, Object... args) {
         System.out.print("[" + getLocalName() + "] ");
         System.out.println(String.format(text, args));
@@ -111,7 +112,9 @@ public class GamemasterAgent extends Agent {
 
         for (int i = 0; i < iterations; i++) {
             behaviour.addSubBehaviour(new AchieveREInitiator(this, msg) {
-                @Override
+                
+
+				@Override
                 protected void handleFailure(ACLMessage failure) {
                     if (failure.getSender().equals(myAgent.getAMS()))
                         // FAILURE notification from the JADE runtime: the receiver does not exist
@@ -144,16 +147,28 @@ public class GamemasterAgent extends Agent {
 
                     String id = ((ACLMessage) notifications.get(0)).getConversationId();
                     gameHistory.addAnswer(id, new GameHistory.AnswersPrisoners(answers.get(0).getPrisonerAID(),
-                            answers.get(0).getAnswer(), answers.get(1).getPrisonerAID(), answers.get(1).getAnswer()));
-
+                            answers.get(0).getAnswer(), answers.get(1).getPrisonerAID(), answers.get(1).getAnswer()));                    
+                    
                     ACLMessage inform = new ACLMessage(ACLMessage.INFORM);
                     inform.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
                     inform.setContent(String.format("%s %s %s %s %s", id, answers.get(0).getPrisonerAID(),
                             answers.get(0).getAnswer(), answers.get(1).getPrisonerAID(), answers.get(1).getAnswer()));
                     subscriptionResponder.notify(inform);
+                    
+                    RoundsPlayed++;
+                    if(RoundsPlayed == iterations)
+                    {
+                    	AID winner = gameHistory.calculateWinner();
+                    	if(winner != null)
+                    		out(winner.getLocalName() + " WON!");
+                    	else
+                    		out("Result: DRAW!");
+                    }
                 }
             });
         }
+        
+        
 
         return behaviour;
     }
