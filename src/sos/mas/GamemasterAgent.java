@@ -151,8 +151,8 @@ public class GamemasterAgent extends Agent {
                     
                     ACLMessage inform = new ACLMessage(ACLMessage.INFORM);
                     inform.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
-                    inform.setContent(String.format("%s %s %s %s %s", id, answers.get(0).getPrisonerAID(),
-                            answers.get(0).getAnswer(), answers.get(1).getPrisonerAID(), answers.get(1).getAnswer()));
+                    inform.setContent(String.format("%s %s %s %s %s", id, answers.get(0).getPrisonerAID().getLocalName(),
+                            answers.get(0).getAnswer(), answers.get(1).getPrisonerAID().getLocalName(), answers.get(1).getAnswer()));
                     subscriptionResponder.notify(inform);
                     
                     RoundsPlayed++;

@@ -55,12 +55,7 @@ public class PrisonerAgent extends Agent {
         		if(answers.getAnswer1().getPrisonerAID().equals(myAgent.getAID()))
         			comply = answers.getAnswer2().getAnswer();
         		else
-        			comply = answers.getAnswer1().getAnswer();
-        		
-        		out("TITFORTHAT MyAgentId: " + myAgent.getAID());
-        		out("TITFORTHAT lastAnswerId: " + lastAnswerId);
-        		out("TITFORTHAT Answer1 AID: " + answers.getAnswer1().getPrisonerAID() + " LAST ANSWER: " + answers.getAnswer1().getAnswer());
-        		out("TITFORTHAT Answer2 AID: " + answers.getAnswer2().getPrisonerAID() + " LAST ANSWER: " + answers.getAnswer2().getAnswer());
+        			comply = answers.getAnswer1().getAnswer();	
         	}     	
         	
         	
@@ -188,7 +183,6 @@ public class PrisonerAgent extends Agent {
 
                 // TODO replace with FIPA SL
                 
-                out("RECEIVED STRING: " + content);
                 String contents[] = content.split(" ");
                 String id = contents[0];
                 AID aid1 = new AID(contents[1], AID.ISLOCALNAME);
