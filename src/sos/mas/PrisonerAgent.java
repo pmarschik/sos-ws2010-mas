@@ -16,6 +16,8 @@ import jade.proto.SubscriptionInitiator;
 import java.util.Iterator;
 
 public class PrisonerAgent extends Agent {
+	
+	private StrategyBehaviour usedStrategy = null;
 
     private abstract class StrategyBehaviour extends OneShotBehaviour {
         @Override
@@ -86,6 +88,8 @@ public class PrisonerAgent extends Agent {
     protected void setup() {
         try {
             out("Starting");
+            
+            handleArguments();
 
             AID gamemasterAID = getGamemasterService();
 
@@ -113,9 +117,9 @@ public class PrisonerAgent extends Agent {
                 agree.setPerformative(ACLMessage.AGREE);
                 return agree;
             }
-        };
-
-        arer.registerPrepareResultNotification(new RandomStrategy(0.5));
+        };        
+        
+        arer.registerPrepareResultNotification(usedStrategy);
 
         return arer;
     }
@@ -193,6 +197,43 @@ public class PrisonerAgent extends Agent {
         }
 
         return gamemasterAID;
+    }
+    
+    private void handleArguments() {
+        Object[] args = getArguments();
+
+        if (args == null || args.length > 2) {
+            out("Need to supply the strategy which the prisoner should use.");
+
+            takeDown();
+        }
+        String arg = (String) args[0];
+        
+        if(arg.equals("random"))
+        {        	
+        	usedStrategy = new RandomStrategy(Double.parseDouble((String) args[1]));
+        }
+        else if(arg.equals("constant")) 	
+        {
+        	if(Integer.parseInt((String) args[1]) == 1)
+        	{
+        		usedStrategy = new ConstantStrategy(true);
+        	}
+        	else if(Integer.parseInt((String) args[1]) == 0)
+        	{
+        		usedStrategy = new ConstantStrategy(false);
+        	}
+        	else
+        	{
+        		out("Need to supply the a strategy which exists.");	
+        		takeDown();
+        	}    		
+        }
+        else		
+        {
+    		out("Need to supply the a strategy which exists.");	
+    		takeDown();
+        }
     }
 
     @Override
