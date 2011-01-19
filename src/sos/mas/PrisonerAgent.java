@@ -18,6 +18,8 @@ import java.util.Iterator;
 public class PrisonerAgent extends Agent {
 	
 	private StrategyBehaviour usedStrategy = null;
+	
+	
 
     private abstract class StrategyBehaviour extends OneShotBehaviour {
         @Override
@@ -35,6 +37,42 @@ public class PrisonerAgent extends Agent {
         }
 
         protected abstract ACLMessage prepareResultNotification(ACLMessage query, ACLMessage response);
+    }
+    
+    
+    private String lastAnswerId = null;
+    public class TiTForTatStrategy extends StrategyBehaviour {
+        private boolean comply;        
+
+        @Override
+        protected ACLMessage prepareResultNotification(ACLMessage query, ACLMessage response) {
+            // Look at history
+        	if(lastAnswerId == null)
+        		comply = true;
+        	else
+        	{        		
+        		GameHistory.AnswersPrisoners answers = PrisonerAgent.this.history.getAnswer(lastAnswerId);
+        		if(answers.getAnswer1().getPrisonerAID().equals(myAgent.getAID()))
+        			comply = answers.getAnswer2().getAnswer();
+        		else
+        			comply = answers.getAnswer1().getAnswer();
+        		
+        		out("TITFORTHAT MyAgentId: " + myAgent.getAID());
+        		out("TITFORTHAT lastAnswerId: " + lastAnswerId);
+        		out("TITFORTHAT Answer1 AID: " + answers.getAnswer1().getPrisonerAID() + " LAST ANSWER: " + answers.getAnswer1().getAnswer());
+        		out("TITFORTHAT Answer2 AID: " + answers.getAnswer2().getPrisonerAID() + " LAST ANSWER: " + answers.getAnswer2().getAnswer());
+        	}     	
+        	
+        	
+            ACLMessage inform = query.createReply();
+            inform.setPerformative(ACLMessage.INFORM);
+
+            // TODO replace with FIPA SL
+         
+            inform.setContent(String.format("(%s)", comply));
+
+            return inform;
+        }
     }
 
     public class ConstantStrategy extends StrategyBehaviour {
@@ -149,12 +187,14 @@ public class PrisonerAgent extends Agent {
                 String content = inform.getContent();
 
                 // TODO replace with FIPA SL
+                
+                out("RECEIVED STRING: " + content);
                 String contents[] = content.split(" ");
                 String id = contents[0];
                 AID aid1 = new AID(contents[1], AID.ISLOCALNAME);
                 boolean answer1 = Boolean.parseBoolean(contents[2]);
                 AID aid2 = new AID(contents[3], AID.ISLOCALNAME);
-                boolean answer2 = Boolean.parseBoolean(contents[2]);
+                boolean answer2 = Boolean.parseBoolean(contents[4]);
 
                 if (aid2.equals(myAgent.getAID())) {
                     AID aidT = aid1;
@@ -166,7 +206,8 @@ public class PrisonerAgent extends Agent {
                     aid2 = aidT;
                     answer2 = answertT;
                 }
-
+                
+                lastAnswerId = id;
                 history.addAnswer(id, new GameHistory.AnswersPrisoners(aid1, answer1, aid2, answer2));
             }
         };
@@ -228,6 +269,10 @@ public class PrisonerAgent extends Agent {
         		out("Need to supply the a strategy which exists.");	
         		takeDown();
         	}    		
+        }
+        else if(arg.equals("titfortat"))
+        {
+        	usedStrategy = new TiTForTatStrategy();
         }
         else		
         {

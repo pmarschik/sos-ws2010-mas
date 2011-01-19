@@ -62,6 +62,10 @@ class GameHistory {
         return answers.get(id);
     }
     
+    public AnswersPrisoners getAnswer(String id) {
+        return answers.get(id);
+    }
+    
     public AID calculateWinner()
     {    	
     	Collection c = answers.values();
