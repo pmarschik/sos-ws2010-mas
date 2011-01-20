@@ -1,5 +1,20 @@
 package sos.mas;
 
+import jade.content.ContentElement;
+import jade.content.abs.AbsContentElement;
+import jade.content.lang.Codec;
+import jade.content.lang.sl.SLCodec;
+import jade.content.lang.sl.SLVocabulary;
+import jade.content.onto.BeanOntologyException;
+import jade.content.onto.Ontology;
+import jade.content.onto.UngroundedException;
+import jade.content.onto.basic.Action;
+import jade.content.onto.basic.Done;
+import jade.content.lang.Codec;
+import jade.content.lang.Codec.CodecException;
+import jade.content.lang.sl.SLCodec;
+import jade.content.onto.Ontology;
+import jade.content.onto.OntologyException;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.ParallelBehaviour;
@@ -20,6 +35,9 @@ import java.util.Vector;
 
 public class GamemasterAgent extends Agent {
 	private int RoundsPlayed = 0;
+	
+	private Codec codec = new SLCodec();
+	private Ontology ontology = GameOntology.getInstance();
 	
     private void out(String text, Object... args) {
         System.out.print("[" + getLocalName() + "] ");
@@ -80,6 +98,9 @@ public class GamemasterAgent extends Agent {
         try {
             out("Starting");
 
+            getContentManager().registerLanguage(codec);
+            getContentManager().registerOntology(ontology);
+            
             handleArguments();
             registerService();
 
@@ -134,6 +155,31 @@ public class GamemasterAgent extends Agent {
                     for (Object notification : notifications) {
                         ACLMessage inform = (ACLMessage) notification;
 
+                        
+                        ContentElement msgContent= null;
+                        try {
+        					msgContent = getContentManager().extractContent(inform);
+        				} catch (UngroundedException e) {
+        					// TODO Auto-generated catch block
+        					e.printStackTrace();
+        				} catch (CodecException e) {
+        					// TODO Auto-generated catch block
+        					e.printStackTrace();
+        				} catch (OntologyException e) {
+        					// TODO Auto-generated catch block
+        					e.printStackTrace();
+        				}
+                        if (msgContent instanceof Answers)
+                        {
+                        	Answers answer = (Answers)msgContent;
+                        	boolean complied = answer.getAnswer();        	
+
+                            answers.add(new GameHistory.Answer(inform.getSender(), complied));
+
+                            out("Agent %s %s", inform.getSender().getName(), (complied ? "complied" : "defected"));
+                        }
+                        
+                        /*
                         // TODO more comprehensive parsing (i.e. handle errors)
                         // TODO replace with FIPA SL parsing
                         boolean complied = inform.getContent().equals("(true)");
@@ -142,7 +188,8 @@ public class GamemasterAgent extends Agent {
 
                         answers.add(new GameHistory.Answer(inform.getSender(), complied));
 
-                        out("Agent %s %s", inform.getSender().getName(), (complied ? "complied" : "defected"));
+                        out("Agent %s %s", inform.getSender().getName(), (complied ? "complied" : "defected")); 
+                        */
                     }
 
                     String id = ((ACLMessage) notifications.get(0)).getConversationId();
@@ -151,8 +198,35 @@ public class GamemasterAgent extends Agent {
                     
                     ACLMessage inform = new ACLMessage(ACLMessage.INFORM);
                     inform.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
-                    inform.setContent(String.format("%s %s %s %s %s", id, answers.get(0).getPrisonerAID().getLocalName(),
-                            answers.get(0).getAnswer(), answers.get(1).getPrisonerAID().getLocalName(), answers.get(1).getAnswer()));
+                    inform.setLanguage(codec.getName());
+                    inform.setOntology(ontology.getName());
+                    
+                    GameResult result = new GameResult();
+                    result.setId(id);
+                    result.setPrisoner1(answers.get(0).getPrisonerAID());
+                    result.setPrisoner2(answers.get(1).getPrisonerAID());
+                    result.setAnswer1(answers.get(0).getAnswer());
+                    result.setAnswer2(answers.get(1).getAnswer());                    
+                    
+                    ResultsIn resultsIn = new ResultsIn();
+                    resultsIn.setResult(result);
+                    
+                    try {
+                    	// Let JADE convert from Java objects to string
+                    	getContentManager().fillContent(inform, resultsIn);                    	
+                    	send(inform);
+                    	}
+                    catch (CodecException ce) {
+                    	ce.printStackTrace();
+                    	}
+                    catch (OntologyException oe) {
+                    	oe.printStackTrace();
+                    	}
+                    
+                    //inform.setContent(String.format("%s %s %s %s %s", id, answers.get(0).getPrisonerAID().getLocalName(),
+                     //       answers.get(0).getAnswer(), answers.get(1).getPrisonerAID().getLocalName(), answers.get(1).getAnswer()));
+                    
+                    
                     subscriptionResponder.notify(inform);
                     
                     RoundsPlayed++;
@@ -194,7 +268,7 @@ public class GamemasterAgent extends Agent {
         sd.setName(getLocalName());
         sd.setType("prisoners-dilemma-gamemaster");
         // Agents that want to use this service need to "know" the prisoners-dilemma-ontology
-        sd.addOntologies("prisoners-dilemma-ontology");
+        sd.addOntologies(ontology.getName());
         // Agents that want to use this service need to "speak" the FIPA-SL language
         sd.addLanguages(FIPANames.ContentLanguage.FIPA_SL);
         dfd.addServices(sd);
