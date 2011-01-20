@@ -77,6 +77,18 @@ public class PrisonerAgent extends Agent {
             Answers answers = new Answers();
             answers.setAnswer(comply);
             
+            try {
+            	// Let JADE convert from Java objects to string
+            	getContentManager().fillContent(inform, answers);                    	
+            	send(inform);
+            	}
+            catch (CodecException ce) {
+            	ce.printStackTrace();
+            	}
+            catch (OntologyException oe) {
+            	oe.printStackTrace();
+            	}
+            
             //inform.setContent(String.format("(%s)", comply));
 
             return inform;
@@ -93,9 +105,23 @@ public class PrisonerAgent extends Agent {
         protected ACLMessage prepareResultNotification(ACLMessage query, ACLMessage response) {
             ACLMessage inform = query.createReply();
             inform.setPerformative(ACLMessage.INFORM);
+            inform.setLanguage(codec.getName());
+            inform.setOntology(ontology.getName());
 
-            // TODO replace with FIPA SL
-            inform.setContent(String.format("(%s)", comply));
+            Answers answers = new Answers();
+            answers.setAnswer(comply);
+            
+            try {
+            	// Let JADE convert from Java objects to string
+            	getContentManager().fillContent(inform, answers);                    	
+            	send(inform);
+            	}
+            catch (CodecException ce) {
+            	ce.printStackTrace();
+            	}
+            catch (OntologyException oe) {
+            	oe.printStackTrace();
+            	}
 
             return inform;
         }
@@ -113,11 +139,25 @@ public class PrisonerAgent extends Agent {
         protected ACLMessage prepareResultNotification(ACLMessage query, ACLMessage response) {
             ACLMessage inform = query.createReply();
             inform.setPerformative(ACLMessage.INFORM);
+            inform.setLanguage(codec.getName());
+            inform.setOntology(ontology.getName());
 
             boolean comply = Math.random() > (1 - chanceForComply);
 
-            // TODO replace with FIPA SL
-            inform.setContent(String.format("(%s)", comply));
+            Answers answers = new Answers();
+            answers.setAnswer(comply);
+            
+            try {
+            	// Let JADE convert from Java objects to string
+            	getContentManager().fillContent(inform, answers);                    	
+            	send(inform);
+            	}
+            catch (CodecException ce) {
+            	ce.printStackTrace();
+            	}
+            catch (OntologyException oe) {
+            	oe.printStackTrace();
+            	}
 
             return inform;
         }
