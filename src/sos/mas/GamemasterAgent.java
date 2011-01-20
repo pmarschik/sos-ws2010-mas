@@ -1,5 +1,6 @@
 package sos.mas;
 
+import jade.content.ContentElement;
 import jade.content.abs.AbsContentElement;
 import jade.content.lang.Codec;
 import jade.content.lang.sl.SLCodec;
@@ -154,6 +155,31 @@ public class GamemasterAgent extends Agent {
                     for (Object notification : notifications) {
                         ACLMessage inform = (ACLMessage) notification;
 
+                        
+                        ContentElement msgContent= null;
+                        try {
+        					msgContent = getContentManager().extractContent(inform);
+        				} catch (UngroundedException e) {
+        					// TODO Auto-generated catch block
+        					e.printStackTrace();
+        				} catch (CodecException e) {
+        					// TODO Auto-generated catch block
+        					e.printStackTrace();
+        				} catch (OntologyException e) {
+        					// TODO Auto-generated catch block
+        					e.printStackTrace();
+        				}
+                        if (msgContent instanceof Answers)
+                        {
+                        	Answers answer = (Answers)msgContent;
+                        	boolean complied = answer.getAnswer();        	
+
+                            answers.add(new GameHistory.Answer(inform.getSender(), complied));
+
+                            out("Agent %s %s", inform.getSender().getName(), (complied ? "complied" : "defected"));
+                        }
+                        
+                        /*
                         // TODO more comprehensive parsing (i.e. handle errors)
                         // TODO replace with FIPA SL parsing
                         boolean complied = inform.getContent().equals("(true)");
@@ -162,7 +188,8 @@ public class GamemasterAgent extends Agent {
 
                         answers.add(new GameHistory.Answer(inform.getSender(), complied));
 
-                        out("Agent %s %s", inform.getSender().getName(), (complied ? "complied" : "defected"));
+                        out("Agent %s %s", inform.getSender().getName(), (complied ? "complied" : "defected")); 
+                        */
                     }
 
                     String id = ((ACLMessage) notifications.get(0)).getConversationId();
@@ -241,7 +268,7 @@ public class GamemasterAgent extends Agent {
         sd.setName(getLocalName());
         sd.setType("prisoners-dilemma-gamemaster");
         // Agents that want to use this service need to "know" the prisoners-dilemma-ontology
-        sd.addOntologies("prisoners-dilemma-ontology");
+        sd.addOntologies(ontology.getName());
         // Agents that want to use this service need to "speak" the FIPA-SL language
         sd.addLanguages(FIPANames.ContentLanguage.FIPA_SL);
         dfd.addServices(sd);

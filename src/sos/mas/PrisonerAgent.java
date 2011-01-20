@@ -69,10 +69,15 @@ public class PrisonerAgent extends Agent {
         	
             ACLMessage inform = query.createReply();
             inform.setPerformative(ACLMessage.INFORM);
+            inform.setLanguage(codec.getName());
+            inform.setOntology(ontology.getName());
 
             // TODO replace with FIPA SL
          
-            inform.setContent(String.format("(%s)", comply));
+            Answers answers = new Answers();
+            answers.setAnswer(comply);
+            
+            //inform.setContent(String.format("(%s)", comply));
 
             return inform;
         }
