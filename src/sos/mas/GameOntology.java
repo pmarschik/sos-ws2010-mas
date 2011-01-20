@@ -13,6 +13,7 @@ public class GameOntology extends BeanOntology{
 		try {
 			add(GameResult.class);
 			add(ResultsIn.class);
+			add(Answers.class);
 		}
 		catch (Exception e) {
 		e.printStackTrace();
