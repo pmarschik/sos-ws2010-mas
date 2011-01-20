@@ -1,5 +1,12 @@
 package sos.mas;
 
+import jade.content.ContentElement;
+import jade.content.lang.Codec;
+import jade.content.lang.Codec.CodecException;
+import jade.content.lang.sl.SLCodec;
+import jade.content.onto.Ontology;
+import jade.content.onto.OntologyException;
+import jade.content.onto.UngroundedException;
 import jade.core.AID;
 import jade.core.Agent;
 import jade.core.behaviours.OneShotBehaviour;
@@ -17,9 +24,10 @@ import java.util.Iterator;
 
 public class PrisonerAgent extends Agent {
 	
-	private StrategyBehaviour usedStrategy = null;
+	private Codec codec = new SLCodec();
+	private Ontology ontology = GameOntology.getInstance();
 	
-	
+	private StrategyBehaviour usedStrategy = null;	
 
     private abstract class StrategyBehaviour extends OneShotBehaviour {
         @Override
@@ -122,6 +130,9 @@ public class PrisonerAgent extends Agent {
         try {
             out("Starting");
             
+            getContentManager().registerLanguage(codec);
+            getContentManager().registerOntology(ontology);
+            
             handleArguments();
 
             AID gamemasterAID = getGamemasterService();
@@ -179,10 +190,49 @@ public class PrisonerAgent extends Agent {
             protected void handleInform(ACLMessage inform) {
                 out("been informed by %s", inform.getSender().getName());
 
-                String content = inform.getContent();
+                //String content = inform.getContent();
 
                 // TODO replace with FIPA SL
+                ContentElement msgContent= null;
+                try {
+					msgContent = getContentManager().extractContent(inform);
+				} catch (UngroundedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (CodecException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (OntologyException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+                if (msgContent instanceof ResultsIn)
+                {
+                	ResultsIn resultsIn = (ResultsIn)msgContent;
+                	GameResult result = resultsIn.getResult();
+                	
+                    String id = result.getId();
+                    AID aid1 = result.getPrisoner1();
+                    boolean answer1 = result.isAnswer1();
+                    AID aid2 = result.getPrisoner2();
+                    boolean answer2 = result.isAnswer2();
+
+                    if (aid2.equals(myAgent.getAID())) {
+                        AID aidT = aid1;
+                        boolean answertT = answer1;
+
+                        aid1 = aid2;
+                        answer1 = answer2;
+
+                        aid2 = aidT;
+                        answer2 = answertT;
+                    }
+                    
+                    lastAnswerId = id;
+                    history.addAnswer(id, new GameHistory.AnswersPrisoners(aid1, answer1, aid2, answer2));       	 	
+                }
                 
+                /*
                 String contents[] = content.split(" ");
                 String id = contents[0];
                 AID aid1 = new AID(contents[1], AID.ISLOCALNAME);
@@ -203,6 +253,7 @@ public class PrisonerAgent extends Agent {
                 
                 lastAnswerId = id;
                 history.addAnswer(id, new GameHistory.AnswersPrisoners(aid1, answer1, aid2, answer2));
+                */
             }
         };
     }
