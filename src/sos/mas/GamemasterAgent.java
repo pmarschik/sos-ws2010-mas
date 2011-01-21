@@ -89,6 +89,12 @@ public class GamemasterAgent extends Agent {
         AID prisoner2 = new AID((String) args[1], AID.ISLOCALNAME);
         int iterations = Integer.parseInt((String) args[2]);
 
+        if (iterations < 1) {
+            out("Invalid value for iterations (must be > 0 but was %d)", iterations);
+
+            doDelete();
+        }
+
         game = new GameHistory(prisoner1, prisoner2, iterations);
     }
 

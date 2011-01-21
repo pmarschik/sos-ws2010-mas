@@ -3,3 +3,15 @@ winter term 2010, Vienna UT
 Benjamin Bachhuber, Patrick Marschik
 
 Multi Agent Systems using JADE - Prisoners Dilemma
+
+To build the source:
+    ant build
+
+To create an executable jar:
+    ant jar
+
+To run the sample:
+    ant run
+
+    You can configure the prisoner agents by modifying
+        mas-prisoners.dilemma.properties (see there for instructions)

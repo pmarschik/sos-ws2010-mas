@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="build" name="Self Organizing Systems - Multi Agent Systems">
+    <property file="mas-prisoners-dilemma.properties"/>
+    <path id="mas.classpath">
+        <pathelement location="build"/>
+        <pathelement location="lib/jade.jar"/>
+    </path>
+    <target name="clean">
+        <delete dir="build"/>
+    </target>
+    <target name="build">
+        <mkdir dir="build"/>
+        <javac debug="true" debuglevel="source,lines,vars" destdir="build" includeantruntime="false" source="1.6"
+               target="1.6">
+            <src path="src"/>
+            <classpath refid="mas.classpath"/>
+        </javac>
+    </target>
+    <target name="jar" depends="build">
+        <jar destfile="mas-prisoners-dilemma.jar" basedir="build/">
+            <zipgroupfileset dir="lib/" includes="*.jar"/>
+            <manifest>
+                <attribute name="Main-Class" value="jade.Boot"/>
+            </manifest>
+        </jar>
+    </target>
+    <target name="run" depends="jar">
+        <java jar="mas-prisoners-dilemma.jar" failonerror="true" fork="yes">
+            <classpath refid="mas.classpath"/>
+            <arg line="-agent ${p1.name}:sos.mas.PrisonerAgent(sos.mas.strategies.${p1.strategy});${p2.name}:sos.mas.PrisonerAgent(sos.mas.strategies.${p2.strategy});gm:sos.mas.GamemasterAgent(alice,bob,${gm.rounds})"/>
+        </java>
+    </target>
+</project>
