@@ -111,8 +111,8 @@ They receive a payoff according to the following matrix (from the point of view 
 		\begin{tabular}{| l | r | r |}
 		\hline
 			Action of A / Action of B & Comply & Defect \\
-			Comply                    & 3 & 0\\
-			Defect                    & 5 & 1\\
+			Comply                    & 3 / 3 & 5 / 0\\
+			Defect                    & 0 / 5 & 1 / 1\\
 			\hline
 		\end{tabular}  
 \end{table*}
@@ -126,12 +126,10 @@ One of the most important decisions is which agents are needed and what their ma
 %%%% Use Case Diagramm Placeholder
 \img{1}{usecases.pdf}{Use Cases}{}
 
-
 The use case diagram shows that two agent classes are needed: PrisonerAgent and GameMasterAgent.
 
-
-The Agents require to communicate with eachother on several channels. There are different forms of communication which are required:
-
+The Agents require to communicate with eachother on several channels.
+There are different forms of communication which are required:
 
 \begin{itemize}
 	\item The GameMasterAgent has to be able to ask the the PrisonerAgents if they are guilty
@@ -142,7 +140,6 @@ The Agents require to communicate with eachother on several channels. There are 
 
 This tasks basically require two different interaction protocols:
 
-
 \begin{description}
 	\item[ArchieveREInitiator \& ArchieveREResponder]\hfill \\
 	 This protocol is used to to enable the Agents to ask and answer the question of guiltiness.
@@ -150,23 +147,15 @@ This tasks basically require two different interaction protocols:
 	Enables the PrisonerAgent to receive notification about the newest game state.
 \end{description}
 
-
-\img{1}{chart1_Part2.pdf}{}{}
-\img{1}{chart1_Part3.pdf}{}{}
-
-\img{1}{chart1_Part1.pdf}{State Chart}{}
+\img{1}{chart1_Part2.pdf}{State chart for prisoner}{}
+\img{1}{chart1_Part3.pdf}{State chart for game-master}{}
+\img{1.1}{chart1_Part1.pdf}{Sequence chart}{}
 
 \section{Conclusion}
 The prisoner's dilemma is a good example to show the strength and weaknesses of Multi Agent Systems.
 Using Multi Agent Systems for small projects seems like an overhead but in large projects Multi Agents System are one of the most powerful architecture available.
 
-
 \newpage
-
-
-
-
-
 
 %#\bibliographystyle{abbrv}
 %#\bibliography{main}
