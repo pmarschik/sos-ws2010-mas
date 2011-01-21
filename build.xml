@@ -7,6 +7,8 @@
     </path>
     <target name="clean">
         <delete dir="build"/>
+        <delete file="mas-prisoners-dilemma.jar"/>
+        <delete file="submission.zip"/>
     </target>
     <target name="build">
         <mkdir dir="build"/>
@@ -23,6 +25,16 @@
                 <attribute name="Main-Class" value="jade.Boot"/>
             </manifest>
         </jar>
+    </target>
+    <target name="zip" depends="jar">
+        <zip destfile="submission.zip">
+            <zipfileset dir="src" prefix="src"/>
+            <zipfileset dir="lib" prefix="lib"/>
+            <zipfileset dir="doc" prefix="doc" excludes="*.graffle"/>
+            <file file="README"/>
+            <file file="build.xml"/>
+            <file file="mas-prisoners-dilemma.properties"/>
+        </zip>
     </target>
     <target name="run" depends="jar">
         <java jar="mas-prisoners-dilemma.jar" failonerror="true" fork="yes">
