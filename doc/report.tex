@@ -1,0 +1,114 @@
+\title{Machine Learning \\ \bigskip WS2010/11\\ \bigskip Exercise 2}
+\author{
+        Benjamin Bachhuber \\
+                (1028430)\\
+                \and
+        Patrick Marschik\\
+        (0625039)
+}
+\date{\today}
+
+\documentclass[a4paper,12pt]{article}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{array}
+\usepackage{xspace}
+\usepackage{acronym}
+\usepackage{rotating}
+
+\definecolor{LinkColor}{rgb}{0,0,0.7}
+
+\usepackage[
+bookmarks=true, % PDF bookmarks allowed. NB! The level depth of bookmarks is the same as in the TOC.
+unicode=true, % PDF bookmarks in Unicode.
+bookmarksnumbered=true, % Section numbers in PDF bookmarks.
+bookmarksopenlevel=1, % The open level in PDF bookmarks.
+hyperindex=true, % Hyperlinked index.
+plainpages=false, % Name arabic and roman page numbers differently.
+colorlinks=true, % Links are marked as coloured text, not coloured box.
+linkcolor=linkc, % The colour for in-document links (e.g. in the table of contents).
+citecolor = citec, % The colour for bibliographic citations.
+urlcolor=urlc, % The colour for hyperlinks to the Net.
+pdfpagelayout=OneColumn % Continuous page scrolling.
+]{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=LinkColor,
+  citecolor=LinkColor,
+  filecolor=LinkColor,
+  menucolor=LinkColor,
+  pagecolor=LinkColor,
+  urlcolor=LinkColor
+}
+
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+
+\usepackage{tocloft}
+
+\newcommand{\dss}{soybean-small\xspace}
+\newcommand{\dsn}{nursery\xspace}
+\newcommand{\dsa}{arrhythmia\xspace}
+\newcommand{\linsearch}{LinearNNSearch\xspace}
+
+\acrodef{WEKA}{Waikato Environment for Knowledge Analysis}
+
+\begin{document}
+\maketitle
+
+\newcommand{\fittable}[1]{\begin{center}
+\resizebox{\textwidth}{!}{#1}\end{center}
+}
+
+\newcommand{\img}[4]{
+ \begin{figure}[!htp]
+\centering
+  \includegraphics[width=#1\textwidth]{#2}
+  \caption{\emph{#3}}
+  \label{#4}
+ \end{figure}
+}
+\newcommand{\imgit}[4]{
+\\[\intextsep]
+\begin{minipage}{\linewidth}
+  \centering%
+  \includegraphics[width=#1\textwidth,clip=]{#2}%
+  \figcaption{\emph{#3}}%
+  \label{#4}%
+\end{minipage}
+\\[\intextsep]
+}
+
+\newcommand{\imgitX}[2]{
+  {\centering
+\fbox{
+\begin{minipage}{#1\textwidth}
+  \vskip .5em
+  \centering
+  \includegraphics[width=#1\textwidth]{#2}
+  \vskip .5em
+\end{minipage}
+}
+  }
+}
+
+
+\newpage
+
+\tableofcontents
+
+
+
+
+
+
+
+
+%#\bibliographystyle{abbrv}
+%#\bibliography{main}
+
+\end{document}
+This is never printed
+
