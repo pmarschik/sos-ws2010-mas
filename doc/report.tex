@@ -102,9 +102,11 @@ pdfpagelayout=OneColumn % Continuous page scrolling.
 \section{Introduction}
 
 The prisoner's dilemma is one of the fundamental problems in game theory.\\
-There are two prisoner's. In the prisoners dilemma each of them has to decide whether to cooperate with an opponent, or defect. Both prisoners make a choice and then their decisions are revealed. 
+In the prisoners dilemma there are two prisoner's.
+Each of them has to decide whether to cooperate with an opponent, or defect.
+Both prisoners make a choice and then their decisions are revealed. 
 
-They receive a payoff according to the following matrix (from the point of view of prisoner A). 
+They receive a payoff according to the following table: 
 
 \begin{table*}[h]
 	\centering
@@ -117,45 +119,80 @@ They receive a payoff according to the following matrix (from the point of view 
 		\end{tabular}  
 \end{table*}
 
-Since the strategies for a game with one turn or with a deterministic amount of games is fairly predictable, the so called \textit{Iterate Prisoner's Dilemma} was used. In this special kind of Prisoner's Dilemma none of the prisoner's knows how many rounds are played.
+Since the strategies for a game with one turn or with a deterministic amount of games is fairly predictable,
+the so called \textit{Iterate Prisoner's Dilemma} was used.
+In this special kind of Prisoner's Dilemma none of the prisoner's knows how many rounds are played.
 
 \section{Technical Description}
 
-One of the most important decisions is which agents are needed and what their main tasks are. The following use case diagramm helped was very useful in this process of decision making:
+One of the most important decisions is which agents are needed and what their main tasks are.
+The following use case diagramm helped was very useful in this process of decision making:
 
-%%%% Use Case Diagramm Placeholder
-\img{1}{usecases.pdf}{Use Cases}{}
+The use case diagram shows (see fig. \ref{fig:usecase} on page \pageref{fig:usecase}) that two agent classes are needed:
+\texttt{PrisonerAgent} (see fig. \ref{fig:state_prisoner} on page \pageref{fig:state_prisoner}) and \texttt{GamemasterAgent} (see fig. \ref{fig:state_gm} on page \pageref{fig:state_gm}).
 
-The use case diagram shows that two agent classes are needed: PrisonerAgent and GameMasterAgent.
-
-The Agents require to communicate with eachother on several channels.
+The agents required to communicate with each other on several channels.
 There are different forms of communication which are required:
 
 \begin{itemize}
-	\item The GameMasterAgent has to be able to ask the the PrisonerAgents if they are guilty
-	\item The PrisonerAgents has to be able to answer if they are guilty
-	\item A PrisonerAgent has to be able to request notifications about the recent game state from the GameMasterAgent
-	\item The GameMaster has to be able to inform PrisonerAgents which requested notifications about changes in the game state.
+	\item The \texttt{GamemasterAgent} has to be able to ask the the PrisonerAgents if they are guilty.
+	\item The \texttt{PrisonerAgent}s has to be able to answer if they are guilty.
+	\item A \texttt{PrisonerAgent} has to be able to receive notifications about the game state from the \texttt{GamemasterAgent}.
+	\item The \texttt{GamemasterAgent} has to be able to inform the \texttt{PrisonerAgent}s
+		-- that requested notifications about changes -- about the current game state.
 \end{itemize}
 
-This tasks basically require two different interaction protocols:
+These tasks basically require two different interaction protocols (see fig. \ref{fig:sequence} on \pageref{fig:sequence} on how they work together.)
 
 \begin{description}
 	\item[ArchieveREInitiator \& ArchieveREResponder]\hfill \\
-	 This protocol is used to to enable the Agents to ask and answer the question of guiltiness.
+	 	This protocol is used to to enable the Agents to ask and answer the question of guiltiness.
+		Furthermore the special case of the FIPA-query protocol was used.
+		This protocol queries an agent about what he believes about a certain state -- in our case it's guiltyness.
 	\item[SubscriptionInitiator \& SubscriptionResponder] \hfill \\
-	Enables the PrisonerAgent to receive notification about the newest game state.
+		Enables the \texttt{PrisonerAgent}s to register at the \texttt{GamemasterAgent} receive notification.
+		The \texttt{GamemasterAgent} in turn sends the results of the round -- i.e. what each agent voted -- to all it's subscribers.
 \end{description}
 
-\img{1}{chart1_Part2.pdf}{State chart for prisoner}{}
-\img{1}{chart1_Part3.pdf}{State chart for game-master}{}
-\img{1.1}{chart1_Part1.pdf}{Sequence chart}{}
 
 \section{Conclusion}
 The prisoner's dilemma is a good example to show the strength and weaknesses of Multi Agent Systems.
-Using Multi Agent Systems for small projects seems like an overhead but in large projects Multi Agents System are one of the most powerful architecture available.
+Using Multi Agent Systems for small projects seems like an overhead.
+In in large projects however Multi Agents System are a powerful architecture.
 
 \newpage
+
+\appendix
+
+\section{Diagrams}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=400px]{usecases.pdf}
+	\caption{Use-Case diagram}
+	\label{fig:usecase}
+\end{figure}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=400px]{chart1_Part2.pdf}
+	\caption{State diagram for \texttt{PrisonerAgent}}
+	\label{fig:state_prisoner}
+\end{figure}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=400px]{chart1_Part3.pdf}
+	\caption{State diagram for \texttt{GamemasterAgent}}
+	\label{fig:state_gm}
+\end{figure}
+
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=400px]{chart1_Part1.pdf}
+	\caption{Sequence diagram}
+	\label{fig:sequence}
+\end{figure}
 
 %#\bibliographystyle{abbrv}
 %#\bibliography{main}

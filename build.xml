@@ -31,7 +31,7 @@
         <zip destfile="submission.zip">
             <zipfileset dir="src" prefix="src"/>
             <zipfileset dir="lib" prefix="lib"/>
-            <zipfileset dir="doc" prefix="doc" excludes="*.graffle"/>
+            <zipfileset dir="doc" prefix="doc" includes="report.pdf"/>
             <file file="README"/>
             <file file="build.xml"/>
             <file file="mas-prisoners-dilemma.properties"/>
