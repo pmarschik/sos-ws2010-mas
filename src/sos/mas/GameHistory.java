@@ -1,130 +1,81 @@
 package sos.mas;
 
+
 import jade.core.AID;
+import sos.mas.ontology.Game;
+import sos.mas.ontology.PlaysInGame;
+import sos.mas.ontology.Prisoner;
+import sos.mas.ontology.Round;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Stack;
 
-class GameHistory {
-    public static final int PointsBothComplied = 3;
-    public static final int PointsWinner = 5;
-    public static final int PointsLoser = 0;
-    public static final int PointsBothDefected = 1;
+public class GameHistory {
+    private Game game;
 
-    public static class Answer {
-        private AID prisonerAID;
-        private boolean answer;
+    private PlaysInGame plays1;
+    private PlaysInGame plays2;
 
-        public Answer(AID prisonerAID, boolean answer) {
-            this.prisonerAID = prisonerAID;
-            this.answer = answer;
-        }
+    private Stack<Round> rounds = new Stack<Round>();
 
-        public AID getPrisonerAID() {
-            return prisonerAID;
-        }
-
-        public boolean getAnswer() {
-            return answer;
-        }
+    public GameHistory(AID pris1, AID pris2, int iterations) {
+        Prisoner p1 = new Prisoner(pris1);
+        Prisoner p2 = new Prisoner(pris2);
+        game = new Game(iterations);
+        plays1 = new PlaysInGame(p1, game);
+        plays2 = new PlaysInGame(p2, game);
     }
 
-    public static class AnswersPrisoners {
-        private Answer answer1;
-        private Answer answer2;
+    public int getIterations() {
+        return game.getIterations();
+    }
 
-        public AnswersPrisoners(AID agent1, boolean answer1, AID agent2, boolean answer2) {
-            this.answer1 = new Answer(agent1, answer1);
-            this.answer2 = new Answer(agent2, answer2);
+    public Prisoner getPrisoner1() {
+        return plays1.getPrisoner();
+    }
+
+    public Prisoner getPrisoner2() {
+        return plays2.getPrisoner();
+    }
+
+    public Round newRound(String id) {
+        Round round = new Round(id, game, false, false);
+        rounds.add(round);
+
+        return round;
+    }
+
+    public Round getPreviousRound() {
+        if (rounds.size() - 1 == 0) return null;
+
+        return rounds.get(rounds.size() - 1);
+    }
+
+    public void pushRound(Round round) {
+        rounds.push(round);
+    }
+
+    public int[] calculatePoints() {
+        int points1 = 0;
+        int points2 = 0;
+
+        final int BOTH_CONFESSED = 3;
+        final int ONE_CONFESSED = 5;
+        final int NONE_CONFESSED = 1;
+
+        for (Round round : rounds) {
+            if (round.getConfession1() && round.getConfession2()) {
+                points1 += BOTH_CONFESSED;
+                points2 += BOTH_CONFESSED;
+            } else if (round.getConfession1() && !round.getConfession2()) {
+                points1 += ONE_CONFESSED;
+            } else if (!round.getConfession1() && round.getConfession2()) {
+                points2 += ONE_CONFESSED;
+            } else {
+                points1 += NONE_CONFESSED;
+                points2 += NONE_CONFESSED;
+            }
         }
 
-        public Answer getAnswer1() {
-            return answer1;
-        }
-
-        public Answer getAnswer2() {
-            return answer2;
-        }
-    }
-
-    private HashMap<String, AnswersPrisoners> answers = new HashMap<String, AnswersPrisoners>();
-
-    public HashMap<String, AnswersPrisoners> getAnswers() {
-        return answers;
-    }
-
-    public void addAnswer(String id, AnswersPrisoners answer) {
-        answers.put(id, answer);
-    }
-
-    public AnswersPrisoners getAnswer(Integer id) {
-        return answers.get(id);
-    }
-    
-    public AnswersPrisoners getAnswer(String id) {
-        return answers.get(id);
-    }
-    
-    public AID calculateWinner()
-    {    	
-    	Collection c = answers.values();
-    	Iterator itr = c.iterator();
-    	AID prisoner1 = null;
-    	AID prisoner2 = null;
-    	int pointsPrisoner1 = 0;
-    	int pointsPrisoner2 = 0;
-    	boolean aidSet = false;
-    	
-    	while(itr.hasNext())
-    	{
-    		AnswersPrisoners answer = (AnswersPrisoners)itr.next();
-    		
-    		if(aidSet == false)
-    		{
-	    		prisoner1 = answer.answer1.prisonerAID;
-	    		prisoner2 = answer.answer2.prisonerAID; 
-	    		aidSet = true;
-    		}
-    		
-    		if(answer.answer1.answer == true &&  answer.answer2.answer == true)
-			{
-    			pointsPrisoner1 += 3; pointsPrisoner2 += 3;
-			} 
-    		else if(answer.answer1.answer == false &&  answer.answer2.answer == false)
-    		{
-    			pointsPrisoner1 += 1; pointsPrisoner2 += 1;
-    		}
-    		else if(answer.answer1.answer == true &&  answer.answer2.answer == false)
-    		{
-    			if(answer.answer1.prisonerAID.equals(prisoner1))
-    			{
-    				pointsPrisoner1 += 0;
-    				pointsPrisoner2 += 5;
-    			}
-    			else
-    			{
-    				pointsPrisoner1 += 5;
-    				pointsPrisoner2 += 0;	
-    			}
-    		}
-    		else if(answer.answer1.answer == false &&  answer.answer2.answer == true)
-    		{
-    			if(answer.answer1.prisonerAID.equals(prisoner1))
-    			{
-    				pointsPrisoner1 += 5; 
-    				pointsPrisoner2 += 0;
-    			}
-    			else
-    			{
-    				pointsPrisoner1 += 0; 
-    				pointsPrisoner2 += 5;
-    			}
-    		}    			
-    	}
-    		
-		if(pointsPrisoner1 > pointsPrisoner2) return prisoner1;
-		if(pointsPrisoner1 < pointsPrisoner2) return prisoner2;
-		return null;
+        return new int[]{points1, points2};
     }
 }

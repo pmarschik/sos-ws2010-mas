@@ -2,14 +2,10 @@ package sos.mas;
 
 import jade.content.ContentElement;
 import jade.content.lang.Codec;
-import jade.content.lang.Codec.CodecException;
 import jade.content.lang.sl.SLCodec;
 import jade.content.onto.Ontology;
-import jade.content.onto.OntologyException;
-import jade.content.onto.UngroundedException;
 import jade.core.AID;
 import jade.core.Agent;
-import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.ParallelBehaviour;
 import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.*;
@@ -19,151 +15,21 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREResponder;
 import jade.proto.SubscriptionInitiator;
+import sos.mas.ontology.GameOntology;
+import sos.mas.ontology.Round;
+import sos.mas.strategies.AbstractStrategyBehaviour;
+import sos.mas.strategies.ConstantStrategy;
+import sos.mas.strategies.RandomStrategy;
+import sos.mas.strategies.TiTForTatStrategy;
 
 import java.util.Iterator;
 
 public class PrisonerAgent extends Agent {
-	
-	private Codec codec = new SLCodec();
-	private Ontology ontology = GameOntology.getInstance();
-	
-	private StrategyBehaviour usedStrategy = null;	
 
-    private abstract class StrategyBehaviour extends OneShotBehaviour {
-        @Override
-        public void action() {
-            AchieveREResponder p = (AchieveREResponder) parent;
-
-            ACLMessage query = (ACLMessage) getDataStore().get(p.REQUEST_KEY);
-            ACLMessage response = (ACLMessage) getDataStore().get(p.RESPONSE_KEY);
-
-            ACLMessage inform = prepareResultNotification(query, response);
-
-            out("replying with %s", inform.getContent());
-
-            getDataStore().put(p.RESULT_NOTIFICATION_KEY, inform);
-        }
-
-        protected abstract ACLMessage prepareResultNotification(ACLMessage query, ACLMessage response);
-    }
-    
-    
-    private String lastAnswerId = null;
-    public class TiTForTatStrategy extends StrategyBehaviour {
-        private boolean comply;        
-
-        @Override
-        protected ACLMessage prepareResultNotification(ACLMessage query, ACLMessage response) {
-            // Look at history
-        	if(lastAnswerId == null)
-        		comply = true;
-        	else
-        	{        		
-        		GameHistory.AnswersPrisoners answers = PrisonerAgent.this.history.getAnswer(lastAnswerId);
-        		if(answers.getAnswer1().getPrisonerAID().equals(myAgent.getAID()))
-        			comply = answers.getAnswer2().getAnswer();
-        		else
-        			comply = answers.getAnswer1().getAnswer();	
-        	}     	
-        	
-        	
-            ACLMessage inform = query.createReply();
-            inform.setPerformative(ACLMessage.INFORM);
-            inform.setLanguage(codec.getName());
-            inform.setOntology(ontology.getName());
-
-            // TODO replace with FIPA SL
-         
-            Answers answers = new Answers();
-            answers.setAnswer(comply);
-            
-            try {
-            	// Let JADE convert from Java objects to string
-            	getContentManager().fillContent(inform, answers);                    	
-            	send(inform);
-            	}
-            catch (CodecException ce) {
-            	ce.printStackTrace();
-            	}
-            catch (OntologyException oe) {
-            	oe.printStackTrace();
-            	}
-            
-            //inform.setContent(String.format("(%s)", comply));
-
-            return inform;
-        }
-    }
-
-    public class ConstantStrategy extends StrategyBehaviour {
-
-        private boolean comply;
-
-        public ConstantStrategy(boolean comply) { this.comply = comply; }
-
-        @Override
-        protected ACLMessage prepareResultNotification(ACLMessage query, ACLMessage response) {
-            ACLMessage inform = query.createReply();
-            inform.setPerformative(ACLMessage.INFORM);
-            inform.setLanguage(codec.getName());
-            inform.setOntology(ontology.getName());
-
-            Answers answers = new Answers();
-            answers.setAnswer(comply);
-            
-            try {
-            	// Let JADE convert from Java objects to string
-            	getContentManager().fillContent(inform, answers);                    	
-            	send(inform);
-            	}
-            catch (CodecException ce) {
-            	ce.printStackTrace();
-            	}
-            catch (OntologyException oe) {
-            	oe.printStackTrace();
-            	}
-
-            return inform;
-        }
-    }
-
-    public class RandomStrategy extends StrategyBehaviour {
-
-        private double chanceForComply;
-
-        public RandomStrategy() { this(0.2); }
-
-        public RandomStrategy(double chanceForComply) { this.chanceForComply = chanceForComply; }
-
-        @Override
-        protected ACLMessage prepareResultNotification(ACLMessage query, ACLMessage response) {
-            ACLMessage inform = query.createReply();
-            inform.setPerformative(ACLMessage.INFORM);
-            inform.setLanguage(codec.getName());
-            inform.setOntology(ontology.getName());
-
-            boolean comply = Math.random() > (1 - chanceForComply);
-
-            Answers answers = new Answers();
-            answers.setAnswer(comply);
-            
-            try {
-            	// Let JADE convert from Java objects to string
-            	getContentManager().fillContent(inform, answers);                    	
-            	send(inform);
-            	}
-            catch (CodecException ce) {
-            	ce.printStackTrace();
-            	}
-            catch (OntologyException oe) {
-            	oe.printStackTrace();
-            	}
-
-            return inform;
-        }
-    }
-
-    private GameHistory history = new GameHistory();
+    private Codec codec = new SLCodec();
+    private Ontology ontology = GameOntology.getInstance();
+    private AbstractStrategyBehaviour usedStrategy = null;
+    private GameHistory game;
 
     private void out(String text, Object... args) {
         System.out.print("[" + getLocalName() + "] ");
@@ -174,10 +40,11 @@ public class PrisonerAgent extends Agent {
     protected void setup() {
         try {
             out("Starting");
-            
-            getContentManager().registerLanguage(codec);
+
+            getContentManager().registerLanguage(codec, FIPANames.ContentLanguage.FIPA_SL0);
             getContentManager().registerOntology(ontology);
-            
+
+            game = new GameHistory(getAID(), null, -1);
             handleArguments();
 
             AID gamemasterAID = getGamemasterService();
@@ -195,9 +62,9 @@ public class PrisonerAgent extends Agent {
     }
 
     private AchieveREResponder createQueryProtocol() {
-        MessageTemplate queryMessageTemplate = MessageTemplate.and(MessageTemplate.and(
+        MessageTemplate queryMessageTemplate = MessageTemplate.and(
                 MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_QUERY),
-                MessageTemplate.MatchPerformative(ACLMessage.QUERY_IF)), MessageTemplate.MatchContent("(guilty)"));
+                MessageTemplate.MatchPerformative(ACLMessage.QUERY_IF));
 
         AchieveREResponder arer = new AchieveREResponder(this, queryMessageTemplate) {
             @Override
@@ -206,8 +73,8 @@ public class PrisonerAgent extends Agent {
                 agree.setPerformative(ACLMessage.AGREE);
                 return agree;
             }
-        };        
-        
+        };
+
         arer.registerPrepareResultNotification(usedStrategy);
 
         return arer;
@@ -235,70 +102,24 @@ public class PrisonerAgent extends Agent {
             protected void handleInform(ACLMessage inform) {
                 out("been informed by %s", inform.getSender().getName());
 
-                //String content = inform.getContent();
+                ContentElement msgContent = null;
 
-                // TODO replace with FIPA SL
-                ContentElement msgContent= null;
                 try {
-					msgContent = getContentManager().extractContent(inform);
-				} catch (UngroundedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (CodecException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (OntologyException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-                if (msgContent instanceof ResultsIn)
-                {
-                	ResultsIn resultsIn = (ResultsIn)msgContent;
-                	GameResult result = resultsIn.getResult();
-                	
-                    String id = result.getId();
-                    AID aid1 = result.getPrisoner1();
-                    boolean answer1 = result.isAnswer1();
-                    AID aid2 = result.getPrisoner2();
-                    boolean answer2 = result.isAnswer2();
+                    msgContent = getContentManager().extractContent(inform);
+                } catch (Exception e) {
+                    e.printStackTrace();
 
-                    if (aid2.equals(myAgent.getAID())) {
-                        AID aidT = aid1;
-                        boolean answertT = answer1;
-
-                        aid1 = aid2;
-                        answer1 = answer2;
-
-                        aid2 = aidT;
-                        answer2 = answertT;
-                    }
-                    
-                    lastAnswerId = id;
-                    history.addAnswer(id, new GameHistory.AnswersPrisoners(aid1, answer1, aid2, answer2));       	 	
+                    return;
                 }
-                
-                /*
-                String contents[] = content.split(" ");
-                String id = contents[0];
-                AID aid1 = new AID(contents[1], AID.ISLOCALNAME);
-                boolean answer1 = Boolean.parseBoolean(contents[2]);
-                AID aid2 = new AID(contents[3], AID.ISLOCALNAME);
-                boolean answer2 = Boolean.parseBoolean(contents[4]);
 
-                if (aid2.equals(myAgent.getAID())) {
-                    AID aidT = aid1;
-                    boolean answertT = answer1;
+                if (!(msgContent instanceof Round)) {
+                    out("ERROR: message content not Round");
 
-                    aid1 = aid2;
-                    answer1 = answer2;
-
-                    aid2 = aidT;
-                    answer2 = answertT;
+                    return;
                 }
-                
-                lastAnswerId = id;
-                history.addAnswer(id, new GameHistory.AnswersPrisoners(aid1, answer1, aid2, answer2));
-                */
+
+                Round lastRound = (Round) msgContent;
+                game.pushRound(lastRound);
             }
         };
     }
@@ -307,6 +128,8 @@ public class PrisonerAgent extends Agent {
         DFAgentDescription gamemasterServiceTemplate = new DFAgentDescription();
         ServiceDescription gamemasterServiceTemplateSD = new ServiceDescription();
         gamemasterServiceTemplateSD.setType("prisoners-dilemma-gamemaster"); // TODO refactor into constant
+        gamemasterServiceTemplateSD.addLanguages(FIPANames.ContentLanguage.FIPA_SL0);
+        gamemasterServiceTemplateSD.addOntologies(ontology.getName());
         gamemasterServiceTemplate.addServices(gamemasterServiceTemplateSD);
 
         SearchConstraints sc = new SearchConstraints();
@@ -329,45 +152,32 @@ public class PrisonerAgent extends Agent {
 
         return gamemasterAID;
     }
-    
+
     private void handleArguments() {
         Object[] args = getArguments();
 
         if (args == null || args.length > 2) {
             out("Need to supply the strategy which the prisoner should use.");
 
-            takeDown();
+            doDelete();
         }
+
         String arg = (String) args[0];
-        
-        if(arg.equals("random"))
-        {        	
-        	usedStrategy = new RandomStrategy(Double.parseDouble((String) args[1]));
-        }
-        else if(arg.equals("constant")) 	
-        {
-        	if(Integer.parseInt((String) args[1]) == 1)
-        	{
-        		usedStrategy = new ConstantStrategy(true);
-        	}
-        	else if(Integer.parseInt((String) args[1]) == 0)
-        	{
-        		usedStrategy = new ConstantStrategy(false);
-        	}
-        	else
-        	{
-        		out("Need to supply the a strategy which exists.");	
-        		takeDown();
-        	}    		
-        }
-        else if(arg.equals("titfortat"))
-        {
-        	usedStrategy = new TiTForTatStrategy();
-        }
-        else		
-        {
-    		out("Need to supply the a strategy which exists.");	
-    		takeDown();
+
+        if (arg.equals("random"))
+            usedStrategy = new RandomStrategy(codec, ontology, Double.parseDouble((String) args[1]));
+        else if (arg.equals("constant")) {
+            if (Integer.parseInt((String) args[1]) == 1)
+                usedStrategy = new ConstantStrategy(codec, ontology, true);
+            else if (Integer.parseInt((String) args[1]) == 0)
+                usedStrategy = new ConstantStrategy(codec, ontology, false);
+        } else if (arg.equals("titfortat"))
+            usedStrategy = new TiTForTatStrategy(codec, ontology, game);
+
+        if (usedStrategy == null) {
+            out("ERROR: invalid strategy parameter supplied");
+
+            doDelete();
         }
     }
 
