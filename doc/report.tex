@@ -101,13 +101,58 @@ pdfpagelayout=OneColumn % Continuous page scrolling.
 
 \section{Introduction}
 
-The prisoner's dilemma is one of the fundamental problems in game theory.
+The prisoner's dilemma is one of the fundamental problems in game theory.\\
+There are two prisoner's. In the prisoners dilemma each of them has to decide whether to cooperate with an opponent, or defect. Both prisoners make a choice and then their decisions are revealed. 
+
+They receive a payoff according to the following matrix (from the point of view of prisoner A). 
+
+\begin{table*}[h]
+	\centering
+		\begin{tabular}{| l | r | r |}
+		\hline
+			Action of A / Action of B & Comply & Defect \\
+			Comply                    & 3 & 0\\
+			Defect                    & 5 & 1\\
+			\hline
+		\end{tabular}  
+\end{table*}
+
+Since the strategies for a game with one turn or with a deterministic amount of games is fairly predictable, the so called \textit{Iterate Prisoner's Dilemma} was used. In this special kind of Prisoner's Dilemma none of the prisoner's knows how many rounds are played.
+
+\section{Technical Description}
+
+One of the most important decisions is which agents are needed and what their main tasks are. The following use case diagramm helped was very useful in this process of decision making:
+
+%%%% Use Case Diagramm hier
+
+The use case diagram shows that two agent classes are needed: PrisonerAgent and GameMasterAgent.
 
 
+The Agents require to communicate with eachother on several channels. There are different forms of communication which are required:
 
-\img{1}{chart1_Part1.pdf}{State Chart}{}
+
+\begin{itemize}
+	\item The GameMasterAgent has to be able to ask the the PrisonerAgents if they are guilty
+	\item The PrisonerAgents has to be able to answer if they are guilty
+	\item A PrisonerAgent has to be able to request notifications about the recent game state from the GameMasterAgent
+	\item The GameMaster has to be able to inform PrisonerAgents which requested notifications about changes in the game state.
+\end{itemize}
+
+This tasks basically require two different interaction protocols:
+
+
+\begin{description}
+	\item[ArchieveREInitiator \& ArchieveREResponder]\hfill \\
+	 This protocol is used to to enable the Agents to ask and answer the question of guiltiness.
+	\item[SubscriptionInitiator \& SubscriptionResponder] \hfill \\
+	Enables the PrisonerAgent to receive notification about the newest game state.
+\end{description}
+
+
 \img{1}{chart1_Part2.pdf}{}{}
 \img{1}{chart1_Part3.pdf}{}{}
+
+\img{1}{chart1_Part1.pdf}{State Chart}{}
 
 \section{Conclusion}
 The prisoner's dilemma is a good example to show the strength and weaknesses of Multi Agent Systems.
