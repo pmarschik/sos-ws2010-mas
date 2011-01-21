@@ -19,6 +19,7 @@ import jade.domain.JADEAgentManagement.ShutdownPlatform;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 import jade.proto.AchieveREInitiator;
+import jade.util.Logger;
 import sos.mas.ontology.GameOntology;
 import sos.mas.ontology.Guilty;
 import sos.mas.ontology.Prisoner;
@@ -30,10 +31,11 @@ import java.util.Vector;
 public class GamemasterAgent extends Agent {
 
     private void out(String text, Object... args) {
-        System.out.print("[" + getLocalName() + "] ");
-        System.out.println(String.format(text, args));
+        System.err.print("[" + getLocalName() + "] ");
+        System.err.println(String.format(text, args));
     }
 
+    private Logger logger;
     private SubscriptionResponder subscriptionResponder;
     private Codec codec = new SLCodec(0);
     private Ontology ontology = GameOntology.getInstance();
@@ -42,6 +44,8 @@ public class GamemasterAgent extends Agent {
     @Override
     protected void setup() {
         try {
+            logger = Logger.getMyLogger(getAID().getLocalName());
+
             out("Starting");
 
             getContentManager().registerLanguage(codec, FIPANames.ContentLanguage.FIPA_SL0);
