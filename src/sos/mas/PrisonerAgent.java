@@ -18,10 +18,9 @@ import jade.proto.SubscriptionInitiator;
 import sos.mas.ontology.GameOntology;
 import sos.mas.ontology.Round;
 import sos.mas.strategies.AbstractStrategyBehaviour;
-import sos.mas.strategies.ConstantStrategy;
-import sos.mas.strategies.RandomStrategy;
-import sos.mas.strategies.TiTForTatStrategy;
 
+import java.lang.reflect.Constructor;
+import java.util.ArrayList;
 import java.util.Iterator;
 
 public class PrisonerAgent extends Agent {
@@ -162,23 +161,46 @@ public class PrisonerAgent extends Agent {
             doDelete();
         }
 
-        String arg = (String) args[0];
+        try {
+            Class clazz = Class.forName((String) args[0]);
 
-        if (arg.equals("random"))
-            usedStrategy = new RandomStrategy(codec, ontology, Double.parseDouble((String) args[1]));
-        else if (arg.equals("constant")) {
-            if (Integer.parseInt((String) args[1]) == 1)
-                usedStrategy = new ConstantStrategy(codec, ontology, true);
-            else if (Integer.parseInt((String) args[1]) == 0)
-                usedStrategy = new ConstantStrategy(codec, ontology, false);
-        } else if (arg.equals("titfortat"))
-            usedStrategy = new TiTForTatStrategy(codec, ontology, game);
+            ArrayList<Class> constructorArgumentTypes = new ArrayList<Class>();
+            Constructor constructor;
+
+            constructorArgumentTypes.add(Codec.class);
+            constructorArgumentTypes.add(Ontology.class);
+            constructorArgumentTypes.add(GameHistory.class);
+
+            if (args.length - 1 > 0)
+                for (int i = 1; i < args.length; i++)
+                    constructorArgumentTypes.add(String.class);
+
+
+            constructor = clazz.getConstructor(constructorArgumentTypes.toArray(new Class[0]));
+
+            ArrayList<Object> arguments = new ArrayList<Object>(constructorArgumentTypes.size());
+
+            arguments.add(codec);
+            arguments.add(ontology);
+            arguments.add(game);
+
+            for (int i = 1; i < args.length; i++)
+                arguments.add(args[i]);
+
+            usedStrategy = (AbstractStrategyBehaviour) constructor.newInstance(arguments.toArray());
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            doDelete();
+        }
 
         if (usedStrategy == null) {
             out("ERROR: invalid strategy parameter supplied");
 
             doDelete();
         }
+
+        out("Using strategy %s", usedStrategy);
     }
 
     @Override

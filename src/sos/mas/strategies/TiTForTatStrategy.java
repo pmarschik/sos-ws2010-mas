@@ -7,16 +7,9 @@ import sos.mas.ontology.Guilty;
 import sos.mas.ontology.Prisoner;
 import sos.mas.ontology.Round;
 
-/**
- * @author patrick
- */
-public class TiTForTatStrategy extends AbstractStrategyBehaviour {
-    GameHistory game;
-
-    public TiTForTatStrategy(Codec codec, Ontology ontology, GameHistory game) {
-        super(codec, ontology);
-
-        this.game = game;
+public class TitForTatStrategy extends AbstractStrategyBehaviour {
+    public TitForTatStrategy(Codec codec, Ontology ontology, GameHistory game) {
+        super(codec, ontology, game);
     }
 
     @Override
@@ -36,5 +29,10 @@ public class TiTForTatStrategy extends AbstractStrategyBehaviour {
         areYouGuilty.setConfession(comply);
 
         return areYouGuilty;
+    }
+
+    @Override
+    public String toString() {
+        return "TitForTatStrategy";
     }
 }

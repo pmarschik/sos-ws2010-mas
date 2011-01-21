@@ -34,49 +34,6 @@ public class GamemasterAgent extends Agent {
         System.out.println(String.format(text, args));
     }
 
-    private class SubscriptionResponder extends jade.proto.SubscriptionResponder {
-        public SubscriptionResponder(Agent a) {
-            super(a, MessageTemplate.and(
-                    MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.SUBSCRIBE),
-                            MessageTemplate.MatchPerformative(ACLMessage.CANCEL)),
-                    MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE)));
-
-        }
-
-        @Override
-        protected ACLMessage handleSubscription(ACLMessage subscription) {
-            // handle a subscription request
-            // if subscription is ok, create it
-            try {
-                createSubscription(subscription);
-            } catch (Exception e) {
-                ACLMessage refuse = new ACLMessage(ACLMessage.REFUSE);
-                refuse.addReceiver(subscription.getSender());
-                refuse.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
-
-                return refuse;
-            }
-
-            // if successful, should answer (return) with AGREE; otherwise with REFUSE or NOT_UNDERSTOOD
-            ACLMessage agree = new ACLMessage(ACLMessage.AGREE);
-            agree.addReceiver(subscription.getSender());
-            agree.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
-
-            return agree;
-        }
-
-        public void notify(ACLMessage inform) {
-            // this is the method you invoke ("call-back") for creating a new inform message;
-            // it is not part of the SubscriptionResponder API, so rename it as you like         
-
-            // go through every subscription
-            Vector subs = getSubscriptions();
-
-            for (int i = 0; i < subs.size(); i++)
-                ((jade.proto.SubscriptionResponder.Subscription) subs.elementAt(i)).notify(inform);
-        }
-    }
-
     private SubscriptionResponder subscriptionResponder;
     private Codec codec = new SLCodec(0);
     private Ontology ontology = GameOntology.getInstance();
@@ -156,6 +113,49 @@ public class GamemasterAgent extends Agent {
     //
     // Behaviours
     //
+
+    private class SubscriptionResponder extends jade.proto.SubscriptionResponder {
+        public SubscriptionResponder(Agent a) {
+            super(a, MessageTemplate.and(
+                    MessageTemplate.or(MessageTemplate.MatchPerformative(ACLMessage.SUBSCRIBE),
+                            MessageTemplate.MatchPerformative(ACLMessage.CANCEL)),
+                    MessageTemplate.MatchProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE)));
+
+        }
+
+        @Override
+        protected ACLMessage handleSubscription(ACLMessage subscription) {
+            // handle a subscription request
+            // if subscription is ok, create it
+            try {
+                createSubscription(subscription);
+            } catch (Exception e) {
+                ACLMessage refuse = new ACLMessage(ACLMessage.REFUSE);
+                refuse.addReceiver(subscription.getSender());
+                refuse.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
+
+                return refuse;
+            }
+
+            // if successful, should answer (return) with AGREE; otherwise with REFUSE or NOT_UNDERSTOOD
+            ACLMessage agree = new ACLMessage(ACLMessage.AGREE);
+            agree.addReceiver(subscription.getSender());
+            agree.setProtocol(FIPANames.InteractionProtocol.FIPA_SUBSCRIBE);
+
+            return agree;
+        }
+
+        public void notify(ACLMessage inform) {
+            // this is the method you invoke ("call-back") for creating a new inform message;
+            // it is not part of the SubscriptionResponder API, so rename it as you like
+
+            // go through every subscription
+            Vector subs = getSubscriptions();
+
+            for (int i = 0; i < subs.size(); i++)
+                ((jade.proto.SubscriptionResponder.Subscription) subs.elementAt(i)).notify(inform);
+        }
+    }
 
     private class BeginRoundBehaviour extends AchieveREInitiator {
         public BeginRoundBehaviour() {

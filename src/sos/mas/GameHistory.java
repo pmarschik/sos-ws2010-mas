@@ -45,7 +45,7 @@ public class GameHistory {
     }
 
     public Round getPreviousRound() {
-        if (rounds.size() - 1 == 0) return null;
+        if (rounds.size() - 1 < 0) return null;
 
         return rounds.get(rounds.size() - 1);
     }

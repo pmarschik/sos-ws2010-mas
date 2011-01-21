@@ -6,18 +6,18 @@ import jade.core.behaviours.OneShotBehaviour;
 import jade.domain.FIPANames;
 import jade.lang.acl.ACLMessage;
 import jade.proto.AchieveREResponder;
+import sos.mas.GameHistory;
 import sos.mas.ontology.Guilty;
 
-/**
- * @author patrick
- */
 public abstract class AbstractStrategyBehaviour extends OneShotBehaviour {
     protected Codec codec;
     protected Ontology ontology;
+    protected GameHistory game;
 
-    public AbstractStrategyBehaviour(Codec codec, Ontology ontology) {
+    public AbstractStrategyBehaviour(Codec codec, Ontology ontology, GameHistory game) {
         this.codec = codec;
         this.ontology = ontology;
+        this.game = game;
     }
 
     protected void out(String text, Object... args) {
